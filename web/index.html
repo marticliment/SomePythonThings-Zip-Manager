@@ -1,0 +1,32 @@
+<html>
+    <link rel="icon" type="image/png" href="icon.png">
+    <title>SomePythonThings Zip Manager</title>
+    <script type="text/javascript" src="/eel.js"></script>
+    <!--script src="https://cdn.rawgit.com/ccampbell/mousetrap/825ce50c/mousetrap.min.js"></script-->
+    <script type="text/javascript" src="./script.js"></script>
+    <script type="text/javascript" src="/eel.js"></script>
+
+    <body style="overflow:hidden">
+        <div id=main><table border=0 width=100% height=100%><tr><td width=50%><button class=main onClick="showCreate()">Create a ZIP file</button></td><td>
+            <button class=main onClick="showExtract()">Extract a .zip file</button></td></tr></table></div>
+        
+        
+        
+        <div id=create>
+            <button class=back onClick=showMenu();>⬅ Go back</button>
+            <button class=button id=add onClick=openFile();>Add files</button>
+            <button class=button id=createZip onClick=createZip();>Create ZIP</button>
+            <p id=textLabel>Files to be compressed:</p><br><textarea id=filesToZip disabled></textarea>
+            <!--p id="removeFileLabel">Choose a file to remove it: </p><select id="removeFile" size=6></select><button class=button id=remove onClick=removeFile();>Remove</button-->
+            
+        </div>
+        <div id=extract>
+            <button class=back onClick=showMenu();>⬅ Go back</button>
+            <button class=button id=selZip onClick=openZip();>Select ZIP File</button>
+            <button class=button id=extractZip onClick=extractZip();>Extract</button>
+            <p id=textLabel2>Zip file to be extracted:</p><br><textarea id=zipToFiles disabled></textarea>
+            
+        </div>
+        </body>
+    <script>checkUpdates()</script>
+</html>
