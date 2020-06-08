@@ -6,15 +6,6 @@ function wait(ms){
   }
 }
 
-function resize(){
-    top.resizeTo(900, 500);
-}
-
-window.onresize = function(event) {
-    resize();
-};
-
-
 async function checkUpdates() {
     eel.checkUpdates_py()
 }
@@ -35,10 +26,11 @@ function mode() {
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
     mode();
 })
-
+eel.expose(showExtract);
 function showExtract(){
     document.getElementById('main').style = "top:100%;";
     //wait(100);
+    document.getElementById('extractProgressBarPiece').style.width = "00%";
     document.getElementById('extract').style = "top:0%;";
 }
 function showMenu(){
@@ -60,6 +52,13 @@ async function openFile() {
     }
 }
 
+async function openFolder() {
+    let result = await eel.openFolder()();
+    if (!(result == 0)){
+        document.getElementById('filesToZip').value = document.getElementById('filesToZip').value + '◼' + result + '\n';
+    }
+}
+
 eel.expose(showFileError); // Expose this function to Python
       function showFileError(x) {
         alert('Unable to add file "' + x + '" to ZIP file. The file will be skipped');
@@ -69,9 +68,40 @@ eel.expose(showAlert); // Expose this function to Python
         alert(x);
       }
 
-function removeFile(){
-    console.log('remove file')
+eel.expose(progressbar);
+function progressbar(p) {
+    if (p >= 99.5){
+        p = 100;
+    }
+    console.log(p);
+    document.getElementById('progressBarPiece').style.width = p+'%';
 }
+
+function clearFiles(){
+    eel.clearZipFiles()();
+    document.getElementById('filesToZip').value = '';
+}
+
+eel.expose(yellowProgressbar);
+function yellowProgressbar(){
+    document.getElementById('progressBarPiece').style = "background-color:rgba(255,255,0,0.5);";
+}
+
+eel.expose(completeProgressbar);
+function completeProgressbar() {
+    document.getElementById('progressBarPiece').style.width = "100%";
+}
+
+eel.expose(nextStepExtractProgressBar)
+function nextStepExtractProgressBar(){
+    document.getElementById('extractProgressBarPiece').style.width = "100%";
+}
+
+eel.expose(resetExtractProgressBar)
+function resetExtractProgressBar(){
+    document.getElementById('extractProgressBarPiece').style.width = "00%";
+}
+
 async function openZip() {
     let result = await eel.openZIP()();
     if (!(result == 0)){
@@ -82,20 +112,22 @@ async function openZip() {
 async function createZip() {
     let result = await eel.createZip()();
     if(result==1){
-        alert('ZIP Creation Done');
         document.getElementById('filesToZip').value = '';
+        document.getElementById('progressBarPiece').style = 'width: 0%;';
+    } else {
+        document.getElementById('progressBarPiece').style = 'width: 0%;';
     }
-    else{
-        alert('Error Occurred')
-    }
+            document.getElementById('progressBarPiece').style = 'background-color: rgba(51,255,51,0.5);'
 }
 async function extractZip() {
     let result = await eel.extractZip()();
     if(result==1){
-        alert('ZIP Extraction Done');
         document.getElementById('zipToFiles').value = '';
+        document.getElementById('extractProgressBarPiece').style.width = '0%';
     }
     else{
-        alert('Error Occurred')
+        document.getElementById('extractProgressBarPiece').style.width = '0%';
     }
 }
+    
+eel.extractFirstZip()();

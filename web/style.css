@@ -12,6 +12,11 @@
     font-family: 'Quicksand', sans-serif;
 }
 
+
+button{
+    outline:none;
+}
+
 #main{
     position:absolute;
     top:0%;
@@ -249,6 +254,109 @@
     background-color: rgba(255,255,255,0.5);
     color: black;
 }
+
+
+#progressBar{
+    background-image:none;
+    background-color:rgba(255, 255, 255,0.5);
+    position:absolute;
+    top:350px;
+    left:20px;
+    width: 810px;
+    height:40px;
+}
+
+#progressBarPiece{
+    background-image:none;
+    background-color:rgba(51,255,51,0.5);
+    width: 00%;
+    height:40px;
+    transition:0.1s;
+}
+
+#extractProgressBar{
+    background-image:none;
+    background-color:rgba(255, 255, 255,0.5);
+    position:absolute;
+    top:350px;
+    left:20px;
+    width: 810px;
+    height:40px;
+}
+
+#extractProgressBarPiece{
+    background-image:none;
+    background-color:rgba(51,255,51,0.5);
+    width: 00%;
+    height:40px;
+    transition:0.1s;
+}
+
+.halfButton{
+    position:absolute;
+    color: black;
+    font-size: 20px;
+    background-image:none;
+    border-width: 0px;
+    height: 80px;
+    width: 175px;
+    margin: 6px;
+    margin-left: 12px;
+    background-color: rgba(255, 255, 255, 0.5);
+    transition:0.2s;
+}
+.halfButton:hover{
+    color: black;
+    font-size: 18px;
+    background-image:none;
+    border-width: 0px;
+    height: 70px;
+    width: 160px;
+    margin-left: 18px;
+    margin-top: 11px;
+    margin-right: 16px;
+    margin-bottom: 11px;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+.halfButton:active{
+    color: black;
+    font-size: 16px;
+    background-image:none;
+    border-width: 0px;
+    height: 56px;
+    width: 130px;
+    margin-left: 35px;
+    margin-top: 18px;
+    margin-right: 31px;
+    margin-bottom: 18px;
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+#half1{
+    position:absolute;
+    top:100px;
+    left:20px;
+}
+
+#half2{
+    position:absolute;
+    top:100px;
+    left:205px;
+}
+
+#half3{
+    position:absolute;
+    top:200px;
+    left:20px;
+}
+
+#half4{
+    position:absolute;
+    top:200px;
+    left:205px;
+}
+
+
 ::-webkit-scrollbar {
     background-image:none;
   width: 16px;
