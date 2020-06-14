@@ -4,6 +4,11 @@ try:
     print
 except:
     pass
+try:
+    from ctypes import windll, pointer, wintypes
+    windll.shcore.SetProcessDpiAwareness(1)
+except:
+    pass
 print('[  HI  ] Welome to SPT Zip Manager Log!')
 import sys
 try:
@@ -77,6 +82,7 @@ def createZip():
         print('[ WAIT ] Preparing zip file')
         root = Tk()
         root.attributes("-alpha", 0.0)
+        root.lift()
         file = asksaveasfile(mode='w', defaultextension="*.zip", title="Save ZIP", initialfile='Zip folder.zip', filetypes=[("ZIP file", "*.zip")])
         root.destroy();
         root.mainloop();
@@ -170,6 +176,7 @@ def openFile():
         print('[ WAIT ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
+        root.lift()
         file = askopenfile(mode='r', defaultextension='*.*', filetypes=[("All files", "*.*")])
         root.destroy();
         root.mainloop();
@@ -196,6 +203,7 @@ def openFolder():
         print('[ WAIT ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
+        root.lift()
         folder = askdirectory()
         root.destroy();
         root.mainloop();
@@ -214,6 +222,7 @@ def openZIP():
         print('[ WAIT ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
+        root.lift()
         file = askopenfile(mode='r', defaultextension='*.ZIP', filetypes=[("ZIP Files", "*.ZIP")])
         root.destroy();
         root.mainloop();
@@ -241,6 +250,7 @@ def extractZip():
         print('[ WAIT ] Dialog in proccess')
         root = Tk()
         root.attributes("-alpha", 0.0)
+        root.lift()
         directory = askdirectory()
         root.destroy()
         root.mainloop()
