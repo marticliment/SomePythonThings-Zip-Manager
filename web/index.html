@@ -17,7 +17,8 @@
             <button class=halfButton id=half3 onClick=createZip();>Create Zip</button>
             <button class=halfButton id=half4 onClick=clearFiles();>Clear files</button>
             <p id=textLabel>Files to be compressed:</p><br><textarea id=filesToZip disabled></textarea>
-            <div id=progressBar><div id=progressBarPiece></div></div>
+            <div id=progressBar><div id=progressBarPiece><img id=loading class=loading src="/load.gif"><input type=text id=actualFile disabled></div></div>
+            
             
         </div>
         <div id=extract>
@@ -25,7 +26,7 @@
             <button class=button id=selZip onClick=openZip();>Select Zip File</button>
             <button class=button id=extractZip onClick=extractZip();>Extract</button>
             <p id=textLabel2>Zip file to be extracted:</p><br><textarea id=zipToFiles disabled></textarea>
-            <div id=extractProgressBar><div id=extractProgressBarPiece></div></div>
+            <div id=extractProgressBar><div id=extractProgressBarPiece><img id=loading_extracting class=loading src="/load.gif"><input type=text id=actualExtractFile disabled></div></div>
             
         </div>
         </body>

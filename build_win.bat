@@ -1,4 +1,4 @@
 rmdir /Q /S build
 rmdir /Q /S dist
-python -m eel "SomePythonThings Zip Manager.py" web --icon icon.ico --noconsole
+python -m eel "SomePythonThings Zip Manager.py" web --icon icon.ico --hidden-import "cefpython3" --noconsole
 pause

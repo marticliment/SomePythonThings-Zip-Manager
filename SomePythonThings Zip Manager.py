@@ -1,15 +1,13 @@
+
 allDone = True
+all_files = ('All Files (*.*)', 'All files (*.*)')
+zip_files = ('Zip Files (*.zip)', 'All files (*.*)')
 try:
-    #!/bin/python3
-    print
-except:
-    pass
-try:
-    from ctypes import windll, pointer, wintypes
+    from ctypes import windll#, pointer, wintypes
     windll.shcore.SetProcessDpiAwareness(1)
 except:
     pass
-print('[  HI  ] Welome to SPT Zip Manager Log!')
+print('[      ] SomePythonThings Zip Manager v2.0 debugging log')
 import sys
 try:
     ZIP = sys.argv[1]
@@ -21,10 +19,10 @@ files = []
 from tkinter.filedialog import *
 from tkinter.messagebox import *
 from tkinter import Tk
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def extractFirstZip():
-    print("[ WAIT ] Checking command line arguments")
+    print("[      ] Checking command line arguments")
     if ZIP != '':
         print('[  OK  ] Found one argument')
         try:
@@ -32,10 +30,10 @@ def extractFirstZip():
             extractZip()
         except:
             pass
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def checkUpdates_py():
-    actualVersion = 1.2
+    actualVersion = 1.3
     if True:
         import struct
         import urllib.request
@@ -52,24 +50,24 @@ def checkUpdates_py():
             return False
     else:
         return False
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def downloadUpdates():
     import webbrowser
     webbrowser.open_new('https://www.somepythonthings.tk/programs/somepythonthings-zip-manager/')
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def clearZipFiles():
     global files
     files = []
     print('[  OK  ] Files list cleared')
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 def errorAddingFile(path):
     eel.showFileError(str(path))
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 def JSAlert(a):
     eel.showAlert(a)
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def createZip():
     import os
@@ -79,18 +77,19 @@ def createZip():
     global allDone
     allDone = True
     if True:
-        print('[ WAIT ] Preparing zip file')
+        print('[      ] Preparing zip file')
         root = Tk()
         root.attributes("-alpha", 0.0)
         root.lift()
         file = asksaveasfile(mode='w', defaultextension="*.zip", title="Save ZIP", initialfile='Zip folder.zip', filetypes=[("ZIP file", "*.zip")])
         root.destroy();
         root.mainloop();
+        eel.startLoading()
         print('[  OK  ] ZIP file created succesfully')
-        filename = str(file.name)
+        zipfilename = str(file.name)
         file.close()
-        print('[ WAIT ] Creating ZIP file on '+str(filename))
-        zipObj = ZipFile(filename, 'w')
+        print('[      ] Creating ZIP file on '+str(zipfilename))
+        zipObj = ZipFile(zipfilename, 'w')
         totalFiles = 0
         import os.path
         import os
@@ -123,27 +122,33 @@ def createZip():
             if path[2] == 'file':
                 try:
                     os.chdir(path[1])
-                    zipObj.write(path[0].split('/')[-1], path[0].split('/')[-1], zipfile.ZIP_DEFLATED)
-                    print('[  OK  ] File "'+str(path[0].split('/')[-1])+'" added successfully')
+                    if not zipfilename == path[0]:
+                        zipObj.write(path[0].split('/')[-1], path[0].split('/')[-1], zipfile.ZIP_DEFLATED)
+                        print('[  OK  ] File "'+str(path[0].split('/')[-1])+'" added successfully')
+                    else:
+                        print('[ WARN ] File "'+str(path[0].split('/')[-1])+'" skipped because it is the output zip')
                 except:
                     allDone = False
                     errorAddingFile(path)
                     print('[FAILED] Unable to add file "'+str(path)+'"')
                 finally:
                     actualFile += 1
-                    eel.progressbar(actualFile*100/(totalFiles))()
+                    eel.progressbar(actualFile*100/(totalFiles), path[0])()
             elif path[2] == 'folder':
                 try:
                     os.chdir(path[1])
                     for folderName, subfolders, filenames in os.walk('./'):
                         for filename in filenames:
                             actualFile += 1
-                            eel.progressbar(actualFile*100/(totalFiles))()
+                            eel.progressbar(actualFile*100/(totalFiles), filename)()
                             if not(filename[0:2] == '._'):
                                 try:
                                     filePath = './'+path[0].split('/')[-1]+'/'+folderName+'/'+filename
-                                    zipObj.write(folderName+'/'+filename, filePath, zipfile.ZIP_DEFLATED)
-                                    print('[  OK  ] File '+filename+' added successfully')
+                                    if not os.path.abspath(filename).replace('\\', '/') == zipfilename:
+                                        zipObj.write(folderName+'/'+filename, filePath, zipfile.ZIP_DEFLATED)
+                                        print('[  OK  ] File '+filename+' added successfully')
+                                    else:
+                                        print('[ WARN ] File "'+os.path.abspath(filename).replace('\\', '/')+'" skipped because it is the output zip')
                                 except:
                                     print('[FAILED] Impossible to add file '+filename)
                                     allDone = False
@@ -167,26 +172,36 @@ def createZip():
         print('[FAILED] Error occurred while creating ZIP File')
         return 0
     print('Function done')
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def openFile():
     import os
     global files
-    try:
-        print('[ WAIT ] Dialog in process')
+    global window
+    global all_files
+    if True:
+        print('[      ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
         root.lift()
-        file = askopenfile(mode='r', defaultextension='*.*', filetypes=[("All files", "*.*")])
+        file = askopenfile(mode='r', defaultextension='*.ZIP', filetypes=[("ZIP Files", "*.ZIP")])
         root.destroy();
         root.mainloop();
+        filename = file.name
         print('[  OK  ] Dialog Completed')
-        files.append([file.name, os.path.dirname(file.name), 'file'])
-        print('[ WAIT ] Closing file')
-        file.close()
-        print('[  OK  ] File Closed. Returning value "'+str(files[-1])+'"')
-        return str(file.name)
-    except:
+        try:
+            files.append([file.name, os.path.dirname(file.name), 'file'])
+            print('[  OK  ] File "'+str(file.name)+'" processed')
+            file.close()
+            return filename
+        except:
+            print('[ FAIL ] Unable to process file "'+f.split('\\')[-1]+'"')
+            try:
+                file.close()
+            except:
+                pass
+        return new_files
+    else:
         print('[FAILED] openFile() failed. Returning value 0')
         try:
             file.close()
@@ -194,13 +209,13 @@ def openFile():
             pass
         finally:
             return 0
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def openFolder():
     import os
     global files
     try:
-        print('[ WAIT ] Dialog in process')
+        print('[      ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
         root.lift()
@@ -213,13 +228,13 @@ def openFolder():
         return str(folder)
     except:
         print('[FAILED] openFolder() failed. Returning value 0')
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def openZIP():
     import os
     global ZIP
     try:
-        print('[ WAIT ] Dialog in process')
+        print('[      ] Dialog in process')
         root = Tk()
         root.attributes("-alpha", 0.0)
         root.lift()
@@ -228,7 +243,7 @@ def openZIP():
         root.mainloop();
         print('[  OK  ] Dialog Completed')
         ZIP = str(file.name)
-        print('[ WAIT ] Closing file')
+        print('[      ] Closing file')
         file.close()
         print('[  OK  ] File Closed. Returning value "'+str(ZIP)+'"')
         return str(ZIP)
@@ -240,14 +255,15 @@ def openZIP():
             pass
         finally:
             return 0
-print('[  OK  ] Step Completed')
+print('[  OK  ] Function loaded correctly')
 @eel.expose
 def extractZip():
     import os
     from zipfile import ZipFile
     global ZIP
+    error=False
     try:
-        print('[ WAIT ] Dialog in proccess')
+        print('[      ] Dialog in proccess')
         root = Tk()
         root.attributes("-alpha", 0.0)
         root.lift()
@@ -256,26 +272,60 @@ def extractZip():
         root.mainloop()
         print('[  OK  ] ZIP file created succesfully')
         directory = str(directory)
+        eel.startLoading_extracting()
         if not(directory == ''):
-            print('[ WAIT ] Extracting ZIP file on '+str(directory))
-            with ZipFile(ZIP,"r") as zip_ref:
-                zip_ref.extractall(directory)
+            print('[      ] Extracting ZIP file on '+str(directory))
+            totalFiles = 0
+            archive = ZipFile(ZIP)
+            for file in archive.namelist():
+                totalFiles += 1
+            actualFile=0
+            for file in archive.namelist():
+                try:
+                    archive.extract(file, directory)
+                    eel.extractProgressBar(actualFile/totalFiles*100, file.split('/')[-1])()
+                    print('[  OK  ] File '+file.split('/')[-1]+' extracted successfully' )
+                except:
+                    print('[ WARN ] Unable to extract file '+file.split('/')[-1])
+                    eel.yellowExtractProgressBar()
+                    error=True
+                finally:
+                    actualFile+= 1
+            eel.extractProgressBar(100, 'Zip Extracted!')()
             eel.nextStepExtractProgressBar()()
-            eel.sleep(0.2)
-            JSAlert('Zip extracted sucessfully!')
+            eel.sleep(0.3)
             eel.resetExtractProgressBar()()
             ZIP = ''
-            print('[  OK  ] ZIP file created sucessfully')
-        return 1
+        if error:
+            print('[ WARN ] Zip file extracted with some errors')
+            JSAlert('Zip file extracted with some errors :v')
+        else:
+            print('[  OK  ] Zip file extracted sucessfully')
+            JSAlert('Zip file extracted sucessfully')
     except:
-        print('[FAILED] Error occurred while creating ZIP File')
+        print('[FAILED] Error occurred while extracting ZIP File')
         JSAlert('An error occurred while extracting the Zip')
-        return 0
-    print('Function done')
-print('[  OK  ] Finished loading functions')
-print('[ WAIT ] Starting server on localhost')
-eel.init('web')
-print("[  OK  ] Server started successfully")
-print('[  OK  ] Started interface')
-checkUpdates_py()
-eel.start('index.html', mode='chrome', size=(900, 500), port=0)
+    print('[  OK  ] Extract function done!')
+
+    
+def server_thread():
+    global kill_server
+    print('[      ] Starting server on localhost')
+    eel.start('index.html',mode='chrome', size=(900, 500), port=9674,  block=True)
+    print('[  OK  ] Server started')
+try:
+    print('[  OK  ] Finished loading functions')
+    import eel
+    eel.init('web')
+    if __name__ == '__main__':
+        from threading import Thread
+        t = Thread(target=server_thread)
+        t.start()
+        checkUpdates_py()
+        print('[      ] Checking for updates...')
+        t.join()
+        print('[ EXIT ] Reached end of the script')
+except:
+    from tkinter.messagebox import showerror
+    print('[FATAL ] Fatal error occurred')
+    showerror(title='SomePythonThings Zip Manager', message='An error has occurred while running SomePythonThings Zip Manager. Try to run the program later. If the error persists, please report it at https://github.com/martinet101/SomePythonThings-Zip-Manager/issues\n\nError details:\n'+str(sys.exc_info()))
