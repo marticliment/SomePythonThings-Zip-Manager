@@ -309,9 +309,9 @@ def extractZip():
 
     
 def server_thread():
-    global kill_server
+    checkUpdates_py()
     print('[      ] Starting server on localhost')
-    eel.start('index.html',mode='chrome', size=(900, 500), port=9674,  block=True)
+    
     print('[  OK  ] Server started')
 try:
     print('[  OK  ] Finished loading functions')
@@ -321,7 +321,7 @@ try:
         from threading import Thread
         t = Thread(target=server_thread)
         t.start()
-        checkUpdates_py()
+        eel.start('index.html',mode='chrome', size=(900, 500), port=9674,  block=True)
         print('[      ] Checking for updates...')
         t.join()
         print('[ EXIT ] Reached end of the script')
