@@ -1,2 +1,2 @@
 #!/bin/bash
-python3.7 -m eel "SomePythonThings Zip Manager.py" web --hidden-import=tkinter --onefile --add-binary='/System/Library/Frameworks/Tk.framework/Tk':'tk' --add-binary='/System/Library/Frameworks/Tcl.framework/Tcl':'tcl'
+python3.7 -m PyInstaller --noconfirm "SomePythonThings Zip Manager.py" --add-data "background.jpg:." --add-data "icon.png:." --icon icon.icns --hidden-import="pkg_resources.py2_warn" --windowed
