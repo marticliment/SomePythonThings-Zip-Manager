@@ -12,27 +12,56 @@ from zipfile import ZipFile
 from threading import Thread
 from urllib.request import urlopen
 from qt_thread_updater import get_updater
+from functools import partial
 
 #Globals
 debugging = False
-actualVersion = 2.2
+actualVersion = 2.3
 zip=""
 font = ""
 realpath="."
 allDone = True
 zip_files = ('Zip Files (*.zip);;All files (*.*)')
+compression_rate = [zipfile.ZIP_DEFLATED, zipfile.ZIP_BZIP2, zipfile.ZIP_LZMA, zipfile.ZIP_STORED]
 files = []
 continueExtracting = True
 continueCreating = True
 buttons = {}
 texts = {}
 progressbars = {}
+lists = {}
+labels = {}
 
 #Functions
 def log(s):
     global debugging
     if(debugging or "WARN" in str(s) or "FAILED" in str(s)):
         print(str(s))
+
+def notify(title, body, icon='icon-zipmanager.png'):
+    global realpath
+    notify=False
+    if _platform == 'win32':
+        if int(platform.release()) >= 10:
+            notify=True
+    elif _platform == 'darwin':
+        notify=True
+        print('notify')
+    elif _platform == 'linux' or _platform=='linux2':
+        notify=True
+    if(notify):
+        try:
+            from notifypy import Notify
+            notification = Notify()
+            notification.title = str(title)
+            notification.message = str(body)
+            try:
+                notification.icon = realpath+'/'+icon
+            except:
+                pass
+            notification.send(block=True)
+        except Exception as e:
+            log("[FAILED] Unable to show notification: "+str(e))
 
 def extractFirstZip():
     log("[      ] Checking command line arguments")
@@ -54,8 +83,9 @@ def checkUpdates_py():
         response = response.read().decode("utf8")
     except:
         log("[ WARN ] Unacble to reach http://www.somepythonthings.tk/versions/zip.ver. Are you connected to the internet?")
-        return False
+        return 'Unable'
     if float(response.split("///")[0]) > actualVersion:
+        notify("SomePythonThings Zip Manager Updater", "SomePythonThings Zip Manager has a new update!\nActual version: {0}\nNew version: {1}".format(actualVersion, response.split("///")[0]))
         if QtWidgets.QMessageBox.Yes == QtWidgets.QMessageBox.question(zipManager, 'SomePythonThings Zip Manager', "There are some updates available for SomePythonThings Zip Manager:\nYour version: "+str(actualVersion)+"\nNew version: "+str(response.split("///")[0])+"\nNew features: \n"+response.split("///")[1]+"\nDo you want to go download and install them?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes):
 
             #                'debian': debian link in posotion 2                  'win32' Windows 32bits link in position 3           'win64' Windows 64bits in position 4                   'macos' macOS 64bits INTEL in position 5
@@ -66,7 +96,7 @@ def checkUpdates_py():
             return False
     else:
         log("[  OK  ] No updates found")
-        return False
+        return 'No'
 
 
 def download_win(url):
@@ -99,7 +129,7 @@ def launch_win(filename):
     try:
         installationProgressBar('Launching')
         throw_info("SomePythonThings Zip Manager Updater", "The file has been downloaded successfully and the setup will start now. When clicking OK, the application will close and a User Account Control window will appear. Click Yes on the User Account Control Pop-up asking for permissions to launch SomePythonThings-Zip-Manager-Updater.exe. Then follow the on-screen instructions.")
-        p1 = os.system('start /B start /B {0}'.format(filename))
+        os.system('start /B start /B {0}'.format(filename))
         get_updater().call_in_main(sys.exit)
         sys.exit()
     except Exception as e:
@@ -182,15 +212,15 @@ def download_macOS(links):
     installationProgressBar('Downloading')
     get_updater().call_in_main(texts["create"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
     get_updater().call_in_main(texts["extract"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-    #p1 = os.system('cd; rm somepythonthings-zip-manager_update.dmg; wget -O "somepythonthings-zip-manager_update.dmg" {0}'.format(links['macos']))
-    p1=0
+    p1 = os.system('cd; rm somepythonthings-zip-manager_update.dmg')
     filedata = urlopen(links['macos'])
     datatowrite = filedata.read()
-    filename = ""
     os.chdir(os.path.expanduser("~"))
-    with open("somepythonthings-zip-manager_update.dmg", 'wb') as f:
-        f.write(datatowrite)
-        filename = f.name
+    try:
+        with open("somepythonthings-zip-manager_update.dmg", 'wb') as f:
+            f.write(datatowrite)
+    except:
+        p1=1
     if(p1 == 0):  # If the download is done
         get_updater().call_in_main(install_macOS)
     else:  # If the download is falied
@@ -323,13 +353,21 @@ def heavy_createZip(zipfilename, files):
         log('[ INFO ] Total number of files: '+str(totalFiles))
         progressbars['create'].setMaximum(totalFiles)
         actualFile = 0
+        try:
+            compression_type = compression_rate[lists['compression'].currentIndex()]
+            log("[  OK  ] Selected compression algorithm is {0}".format(lists['compression'].currentIndex()))
+        except Exception as e:
+            if(debugging):
+                raise e
+            get_updater().call_in_main(throw_warning, "SomePythonThongs Zip Manager", "An error occurred while selecting your desired compression algorithm. Compression algorithm will be \"Deflated\". ")
+            compression_type = zipfile.ZIP_DEFLATED
         continueCreating = True
         for path in files:
             if path[2] == 'file':
                 try:
                     os.chdir(path[1])
                     if not zipfilename == path[0]:
-                        t = KillableThread(target=pureCompress, args=(zipObj, path[0].split('/')[-1], path[0].split('/')[-1], zipfile.ZIP_DEFLATED,))
+                        t = KillableThread(target=pureCompress, args=(zipObj, path[0].split('/')[-1], path[0].split('/')[-1], compression_type,))
                         t.daemon = True
                         t.start()
                         while t.is_alive():
@@ -383,7 +421,7 @@ def heavy_createZip(zipfilename, files):
                                         '/'+folderName+'/'+filename
                                     if not os.path.abspath(filename).replace('\\', '/') == zipfilename:
                                         t = KillableThread(target=pureCompress, args=(
-                                            zipObj, folderName+'/'+filename, filePath, zipfile.ZIP_DEFLATED,))
+                                            zipObj, folderName+'/'+filename, filePath, compression_type,))
                                         t.daemon = True
                                         t.start()
                                         while t.is_alive():
@@ -432,6 +470,7 @@ def heavy_createZip(zipfilename, files):
         zipObj.close()
         refreshProgressbar('create', totalFiles, totalFiles,
                            zipfilename, os.path.getsize(zipfilename))
+        notify("File compression done!", "SomePythonThings Zip Manager has finished compressing the selected files and folders.")
         if allDone:
             get_updater().call_in_main(throw_info, "SomepythonThings Zip Manager",
                                       'The Zip file was created sucessfully!')
@@ -498,31 +537,30 @@ def openFile():
     try:
         log('[      ] Dialog in process')
 
-        filepath = QtWidgets.QFileDialog.getOpenFileName(zipManager, "QtWidgets.QFileDialog.getOpenFileName()", 'Select a file to compress it')
-        if(filepath[0] == ''):
+        filepaths = QtWidgets.QFileDialog.getOpenFileNames(zipManager, "Select some files to compress them", '')
+        log('[  OK  ] Dialog Completed')
+        if(filepaths[0] == []):
             log("[ WARN ] User aborted dialog")
             return 0
-        file = open(filepath[0], 'r')
-        filename = file.name
-        file.close()
-        log('[  OK  ] Dialog Completed')
-        try:
-            files.append([filename, os.path.dirname(filename), 'file'])
-            log('[  OK  ] File "'+str(filename)+'" processed')
-            texts['create'].appendPlainText("- "+str(files[-1][0]))
-            return filename
-        except:
-            log('[ FAIL ] Unable to process file "'+filepath+'"')
-            throw_error("Error processing file!",
-                        "Unable to read file \""+filename+"\"")
+        for filepath in filepaths[0]:
+            file = open(filepath, 'r')
+            filename = file.name
+            file.close()
             try:
-                file.close()
+                files.append([filename, os.path.dirname(filename), 'file'])
+                log('[  OK  ] File "'+str(filename)+'" processed')
+                texts['create'].appendPlainText("- "+str(files[-1][0]))
             except:
-                pass
-        return 1
-    except:
+                log('[ FAIL ] Unable to process file "'+filepath+'"')
+                throw_error("Error processing file!",
+                            "Unable to read file \""+filename+"\"")
+                try:
+                    file.close()
+                except:
+                    pass
+    except Exception as e:
+        throw_error("SomePythonThings Zip Manager", "An error occurred while selecting one or more files. \n\nError detsils: "+str(e))
         log('[FAILED] Unable to open file. Returning value 0')
-        return 0
 
 
 def openFolder():
@@ -615,11 +653,9 @@ def heavyExtract(directory, zip):
                         get_updater().call_in_main(progressbars['extract'].setFormat, "")
                         get_updater().call_in_main(taskbprogress.hide)
                         t.shouldBeRuning=False
-                        zip=''
                         get_updater().call_in_main(throw_warning, "SomePythonThings Zip Manager", "User cancelled the zip extraction")
                         get_updater().call_in_main(texts['extract'].setPlainText, "Extract files and folders from a zip\n\nZip file to be extracted:")
                         archive.close()
-                        zip = ''
                         sys.exit("User killed zip creation process")
                     else:
                         time.sleep(0.01)
@@ -636,6 +672,7 @@ def heavyExtract(directory, zip):
         get_updater().call_in_main(refreshProgressbar,'extract', totalFiles, totalFiles, zip, os.path.getsize(zip))
         zip = ''
         time.sleep(0.1)
+        notify("File extraction done!", "SomePythonThings Zip Manager has finished extracting the selected files and folders.")
         if error:
             log('[ WARN ] Zip file extracted with some errors')
             get_updater().call_in_main(throw_warning,"SomePythonThings Zip Manager", 'Zip file extracted with some errors')
@@ -683,6 +720,25 @@ def updates_thread():
     log("[      ] Starting check for updates thread...")
     checkUpdates_py()
 
+    
+def quitZipManager():
+    log("[ INFO ] Quitting application...")
+    global zipManager
+    zipManager.close()
+    sys.exit()
+
+def checkDirectUpdates():
+    global actualVersion
+    result = checkUpdates_py()
+    if(result=='No'):
+        throw_info("SomePythonThings Zip Manager Updater", "There aren't updates available at this time. \n(actual version is {0})".format(actualVersion))
+    elif(result=="Unable"):
+        throw_warning("SomePythonThings Zip Manager Updater", "Can't reach SomePythonThings Servers!\n  - Are you connected to the internet?\n  - Is your antivirus or firewall blocking SomePythonThings Zip Manager?\nIf none of these solved the problem, please check back later.")
+
+def openHelp():
+    webbrowser.open_new("http://www.somepythonthings.tk/programs/somepythonthings-zip-manager/help/")
+
+
 def openOnExplorer(file):
     if    (_platform == 'win32'):
         try:
@@ -705,30 +761,36 @@ def openOnExplorer(file):
 def resizeWidgets():
     global zipManager, buttons, texts, progressbars, font
 
+    separation20=int((zipManager.height()/100)*3.2)
+    separation10=int((zipManager.height()/100)*1.6)
+
     btn_full_width = int((zipManager.width()/2)-40)-10
     btn_half_width = int((((zipManager.width()/2)-40)/2)-10)
-    btn_full_height = int(zipManager.height()/5)+10
-    btn_half_height = int(zipManager.height()/10)
-    btn_1st_row = 20
-    btn_2nd_row = btn_1st_row+btn_half_height+10
+    btn_full_height = int(((zipManager.height())-25)/5)+10
+    btn_half_height = int(((zipManager.height())-25)/10)
+    if(_platform == 'darwin'):
+        btn_1st_row = separation20+12
+    else:
+        btn_1st_row = separation20+25
+    btn_2nd_row = btn_1st_row+btn_half_height+separation10
     btn_1st_column = 20
     btn_2nd_column = btn_1st_column+btn_half_width+10
     btn_3rd_column = int(zipManager.width()/2)+btn_1st_column
     btn_4th_column = int(zipManager.width()/2)+btn_2nd_column
 
     text_width = btn_full_width
-    text_height = int((zipManager.height()/100*49.5))
-    text_1st_row = int(btn_2nd_row+btn_half_height+20)
+    text_height = int((((zipManager.height())-25)/100*48))
+    text_1st_row = int(btn_2nd_row+btn_half_height+separation20)
     text_1st_column = btn_1st_column
     text_2nd_column = btn_3rd_column
 
     pgsbar_1st_column = text_1st_column
     pgsbar_2nd_column = text_2nd_column
-    pgsbar_1st_row = text_1st_row+text_height+20
+    pgsbar_1st_row = text_1st_row+text_height+separation20
     pgsbar_width = text_width
-    pgsbar_height = int((zipManager.height()/100*5))
+    pgsbar_height = int((((zipManager.height())-25)/100*5))
 
-    btn_cancel_1st_row = pgsbar_1st_row+pgsbar_height+20
+    btn_cancel_1st_row = pgsbar_1st_row+pgsbar_height+separation20
 
     buttons["sel_file"].resize(btn_half_width, btn_half_height)
     buttons["sel_file"].move(btn_1st_column, btn_1st_row)
@@ -736,7 +798,7 @@ def resizeWidgets():
     buttons["sel_folder"].move(btn_1st_column, btn_2nd_row)
     buttons["create_zip"].resize(btn_half_width, btn_half_height)
     buttons["create_zip"].move(btn_1st_column, btn_cancel_1st_row)
-    buttons["clear_files"].resize(btn_half_width, btn_full_height)
+    buttons["clear_files"].resize(btn_half_width, btn_half_height)
     buttons["clear_files"].move(btn_2nd_column, btn_1st_row)
     buttons["clear_zip"].resize(btn_half_width, btn_full_height)
     buttons["clear_zip"].move(btn_4th_column, btn_1st_row)
@@ -759,103 +821,14 @@ def resizeWidgets():
     progressbars["create"].setGeometry(pgsbar_1st_column, pgsbar_1st_row, pgsbar_width, pgsbar_height)
     progressbars["extract"].setGeometry( pgsbar_2nd_column, pgsbar_1st_row, pgsbar_width, pgsbar_height)
 
-    for button in ["sel_file", "sel_folder", "create_zip", "clear_files", "sel_zip", "extract_zip", "extract_zip", "create_zip"]:
-        buttons[button].setStyleSheet('''
-        QPushButton
-        {
-            border-image: none;
-            background-image: none;
-            border: 1px solid black;
-            background-color: rgba(0, 0, 0, 0.5);
-            font-size:20px;
-            border-radius: 3px;
-            color: #DDDDDD;
-            font-family: \"'''+font+'''\", monospace;
-            font-weight: bold;
-        }
-        QPushButton::hover
-        {
-            background-color: rgba(0, 0, 0, 0.4);
-        }
-        ''')
-    for button in ["clear_files", "clear_zip", "cancel_create", "cancel_extract"]:
-        buttons[button].setStyleSheet('''
-        QPushButton
-        {
-            border-image: none;
-            background-image: none;
-            border: 1px solid black;
-            background-color: rgba(0, 0, 0, 0.5);
-            font-size:20px;
-            border-radius: 3px;
-            color: #DDDDDD;
-            font-family: \"'''+font+'''\", monospace;
-            font-weight: bold;
-        }
-        QPushButton::hover
-        {
-            border: 1px solid rgb(155, 0, 0);
-            background-color: rgba(205, 0, 0, 0.7);
-        }
-        ''')
-    for button in ["extract_zip", "create_zip"]:
-        buttons[button].setStyleSheet('''
-        QPushButton
-        {
-            border-image: none;
-            background-image: none;
-            border: 1px solid black;
-            background-color: rgba(0, 0, 0, 0.5);
-            font-size:20px;
-            border-radius: 3px;
-            color: #DDDDDD;
-            font-family: \"'''+font+'''\", monospace;
-            font-weight: bold;
-        }
-        QPushButton::hover
-        {
-            border: 1px solid rgb(0, 103, 1);
-            background-color: rgba(0, 153, 51, 0.7);
-        }
-        ''')
-    for text in ["create", "extract"]:
-        texts[text].setStyleSheet('''
-        QPlainTextEdit
-        {
-            border-image: none;
-            background-image: none;
-            border: 1px solid black;
-            background-color: rgba(0, 0, 0, 0.5);
-            font-size:15px;
-            border-radius: 3px;
-            color: #DDDDDD;
-            font-family: \"'''+font+'''\", monospace;
-            font-weight: bold;
-            padding: 5px;
-        }
-        ''')
-    for progressbar in ["create", "extract"]:
-        progressbars[progressbar].setStyleSheet('''
-        QProgressBar
-        {
-            text-align: center;
-            border-image: none;
-            background-image: none;
-            border: 1px solid black;
-            background-color: rgba(0, 0, 0, 0.5);
-            font-size:17px;
-            border-radius: 3px;
-            color: #DDDDDD;
-            font-family: \"'''+font+'''\", monospace;
-            font-weight: bold;
-        }
-        QProgressBar::chunk
-        {
-            border-radius: 3px;
-            background-color: rgba(0, 255, 0, 0.5);
-        }
-        ''')
 
+    lists['compression'].move(btn_2nd_column, int(btn_2nd_row+btn_half_height/2))
+    lists['compression'].resize(btn_half_width, int(btn_half_height/2))
+
+    labels['compression'].move(btn_2nd_column, btn_2nd_row)
+    labels['compression'].resize(btn_half_width, int(btn_half_height/2))
+
+    
 
 # main code
 if __name__ == '__main__':
@@ -890,6 +863,7 @@ if __name__ == '__main__':
     log("[  OK  ] Platform is {0}, font is {1} and real path is {2}".format(_platform, font, realpath))
     
     background_picture_path='{0}/background-zipmanager.png'.format(realpath.replace('c:', 'C:'))
+    black_picture_path='{0}/black-zipmanager.png'.format(realpath.replace('c:', 'C:'))
     class Ui_MainWindow(object):
         def setupUi(self, MainWindow):
             global background_picture_path
@@ -940,7 +914,7 @@ if __name__ == '__main__':
     zipManager = Window()
     try:
         zipManager.resize(1200, 700)
-        zipManager.setWindowTitle('SomePythonThings Zip Manager')
+        zipManager.setWindowTitle('SomePythonThings Zip Manager') 
         zipManager.setStyleSheet("""
             * 
             {
@@ -948,6 +922,17 @@ if __name__ == '__main__':
                 font-weight: bold;
                 font-size:14px;
                 font-family:"""+font+""";
+                /*background-color: #333333;
+            */}
+
+            QPushButton {
+                border-image: none;
+                background-color: #333333;
+                border-image: url(\""""+black_picture_path+"""\") 0 0 0 0 stretch stretch;
+                /*border: 1px solid black;
+                */width: 80px;
+                height: 30px;
+                border-radius: 3px;
             }
 
             QMessageBox 
@@ -970,9 +955,14 @@ if __name__ == '__main__':
                 background-color: #252525;
             }
 
-            QScrollBar:vertical 
+            QScrollBar 
             {
-                background-color: rgba(0, 0, 0, 0.0)
+                background-color: rgba(0, 0, 0, 0.0);
+            }
+
+            QScrollBar::vertical 
+            {
+                background-color: rgba(0, 0, 0, 0.0);
             }
 
             QScrollBar::handle:vertical 
@@ -1002,14 +992,69 @@ if __name__ == '__main__':
                 border: 1px solid black;
                 background-color: rgba(0, 0, 0, 0.6);
             }
+
+            QLabel
+            {   
+                border-image: none;
+                padding: 3px;
+                border-radius: 3px;
+                
+            }
+
+            QComboBox
+            {   
+                border-image: none;
+                selection-background-color: rgb(0, 0, 0);
+                margin:0px;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                border-radius: 3px;
+                border-top-left-radius: 0px;
+                border-top-right-radius: 0px;
+                border-top:0px;
+                padding-left: 7px;
+            }
+            QAbstractItemView{
+                background-color: rgb(41, 41, 41);
+                margin: 0px;
+                border-radius: 3px;
+            }
+
+            QMenuBar{
+                background-color: #333333;
+            }
+
+            QMenu{
+                background-color: #333333;
+            }
+
+            QMenu::item {
+                border: 5px solid #333333;
+                border-right: 10px solid #333333;
+            }
+            QMenu::item:selected {
+                background-color: #000000;
+                border:5px solid  #000000;
+            }
+            QMenuBar::item{
+                background-color: #333333;
+                border:5px solid  #333333;
+
+            }
+            QMenuBar::item:selected{
+                background-color: #000000;
+                border:5px solid  #000000;
+
+            }
         """)
+        
         try:
             zipManager.setWindowIcon(QtGui.QIcon("{0}/icon-zipmanager.png".format(realpath)))
         except:
             pass
         zipManager.setMinimumSize(600, 450)
         buttons["sel_file"] = QtWidgets.QPushButton(zipManager)
-        buttons["sel_file"].setText("Add file")
+        buttons["sel_file"].setText("Add files")
         buttons["sel_file"].clicked.connect(openFile)
         buttons["sel_folder"] = QtWidgets.QPushButton(zipManager)
         buttons["sel_folder"].setText("Add folder")
@@ -1049,6 +1094,143 @@ if __name__ == '__main__':
         progressbars["extract"].setFormat("Extracted %v out of %m files (%p%)")
 
 
+        labels['compression'] = QtWidgets.QLabel(zipManager)
+        labels['compression'].setText('Compression algorithm:')
+
+        lists['compression'] = QtWidgets.QComboBox(zipManager)
+        i = 0
+        for compression_type in ['Deflated', 'BZIP2', 'LZMA', 'Without Compression']:
+            lists['compression'].insertItem(i, compression_type)
+            i += 1
+        
+        menuBar = zipManager.menuBar()
+        fileMenu = menuBar.addMenu("File")
+        helpMenu = menuBar.addMenu("Help")
+        quitAction = QtWidgets.QAction(" Quit", zipManager)
+        quitAction.setShortcut("")
+        openHelpAction = QtWidgets.QAction(" Online manual", zipManager)
+        openHelpAction.setShortcut("")
+        aboutAction = QtWidgets.QAction(" About SomePythonThings Zip Manager", zipManager)
+        aboutAction.setShortcut("")
+        updatesAction = QtWidgets.QAction(" Check for updates", zipManager)
+        updatesAction.setShortcut("")
+        updatesAction.triggered.connect(checkDirectUpdates)
+        quitAction.triggered.connect(quitZipManager)
+        aboutAction.triggered.connect(partial(throw_info, "About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(actualVersion)+"\n\nThe SomePythonThings Project\n\n © 2020 SomePythonThings\nhttps://www.somepythonthings.tk"))
+        openHelpAction.triggered.connect(openHelp)
+        fileMenu.addAction(quitAction)
+        helpMenu.addAction(openHelpAction)
+        helpMenu.addAction(updatesAction)
+        helpMenu.addAction(aboutAction)
+        
+        labels['compression'].setStyleSheet("""
+            QLabel
+            {
+                border-radius: 3px;
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                border-bottom-color: rgba(0, 0, 0, 0.5);
+            }
+            """)
+
+        for button in ["sel_file", "sel_folder", "create_zip", "clear_files", "sel_zip", "extract_zip", "extract_zip", "create_zip"]:
+            buttons[button].setStyleSheet('''
+            QPushButton
+            {
+                border-image: none;
+                background-image: none;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                font-size:20px;
+                border-radius: 3px;
+                color: #DDDDDD;
+                font-family: \"'''+font+'''\", monospace;
+                font-weight: bold;
+            }
+            QPushButton::hover
+            {
+                background-color: rgba(0, 0, 0, 0.4);
+            }
+            ''')
+        for button in ["clear_files", "clear_zip", "cancel_create", "cancel_extract"]:
+            buttons[button].setStyleSheet('''
+            QPushButton
+            {
+                border-image: none;
+                background-image: none;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                font-size:20px;
+                border-radius: 3px;
+                color: #DDDDDD;
+                font-family: \"'''+font+'''\", monospace;
+                font-weight: bold;
+            }
+            QPushButton::hover
+            {
+                border: 1px solid rgb(155, 0, 0);
+                background-color: rgba(205, 0, 0, 0.7);
+            }
+            ''')
+        for button in ["extract_zip", "create_zip"]:
+            buttons[button].setStyleSheet('''
+            QPushButton
+            {
+                border-image: none;
+                background-image: none;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                font-size:20px;
+                border-radius: 3px;
+                color: #DDDDDD;
+                font-family: \"'''+font+'''\", monospace;
+                font-weight: bold;
+            }
+            QPushButton::hover
+            {
+                border: 1px solid rgb(0, 103, 1);
+                background-color: rgba(0, 153, 51, 0.7);
+            }
+            ''')
+        for text in ["create", "extract"]:
+            texts[text].setStyleSheet('''
+            QPlainTextEdit
+            {
+                border-image: none;
+                background-image: none;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                font-size:15px;
+                border-radius: 3px;
+                color: #DDDDDD;
+                font-family: \"'''+font+'''\", monospace;
+                font-weight: bold;
+                padding: 5px;
+            }
+            ''')
+        for progressbar in ["create", "extract"]:
+            progressbars[progressbar].setStyleSheet('''
+            QProgressBar
+            {
+                text-align: center;
+                border-image: none;
+                background-image: none;
+                border: 1px solid black;
+                background-color: rgba(0, 0, 0, 0.5);
+                font-size:17px;
+                border-radius: 3px;
+                color: #DDDDDD;
+                font-family: \"'''+font+'''\", monospace;
+                font-weight: bold;
+            }
+            QProgressBar::chunk
+            {
+                border-radius: 3px;
+                background-color: rgba(0, 255, 0, 0.5);
+            }
+            ''')
         zipManager.show()
         if(_platform == "win32"):
             from PyQt5 import QtWinExtras
@@ -1067,5 +1249,8 @@ if __name__ == '__main__':
         updates_thread()
         app.exec_()
     except Exception as e:
-        throw_error("Fatal Error!", "SomePythonThings Zip Manager crashed by a fatal error. If it's the first time you see that, just reopen the program. If it's not the first time, please mail me at somepythonthingschannel@gmail.com and send me the details of the error (This would be very helpful ;D )\n\nException details: \nException Type: {0}\n\nException Arguments:\n{1!r}".format(type(e).__name__, e.args)+"\n\nException Comments:\n"+str(e))
+        if not debugging:
+            throw_error("Fatal Error!", "SomePythonThings Zip Manager crashed by a fatal error. If it's the first time you see that, just reopen the program. If it's not the first time, please mail me at somepythonthingschannel@gmail.com and send me the details of the error (This would be very helpful ;D )\n\nException details: \nException Type: {0}\n\nException Arguments:\n{1!r}".format(type(e).__name__, e.args)+"\n\nException Comments:\n"+str(e))
+        else:
+            raise e
     log('[ EXIT ] Reached end of the script')
