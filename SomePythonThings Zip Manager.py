@@ -3,6 +3,7 @@
 import os
 import sys
 import wget
+import json
 import time
 import zipfile
 import tempfile
@@ -10,6 +11,7 @@ import platform
 import traceback
 import darkdetect
 import webbrowser
+from ast import literal_eval
 from sys import platform as _platform
 from PySide2 import QtWidgets, QtGui, QtCore
 from zipfile import ZipFile
@@ -46,7 +48,7 @@ class CheckBoxes():
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------------------------------------- Globals ----------------------------------------------------------------------------------- #
 debugging = False
-actualVersion = 3.0
+actualVersion = 3.1
 
 zip=""
 font = ""
@@ -79,6 +81,14 @@ tempDir = tempfile.TemporaryDirectory()
 errorWhileCompressing = None
 errorWhileExtracting = None
 
+
+defaultSettings = {
+    "default_algorithm": "Deflated",
+    "default_level": 5,
+    "create_subdir": True,
+    "mode":'auto'
+}
+settings = defaultSettings.copy()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 # ----------------------------------------------------------------------------- Stylesheets related ----------------------------------------------------------------------------- #
@@ -243,8 +253,8 @@ lightModeStyleSheet = """
         background-image: none;
         font-family:{0};
         border: 1px solid white;
-        background-color: rgba(255, 255, 255, 0.5);
-        font-size:16px;
+        background-color: rgba(255, 255, 255, 0.6);
+        font-size:14px;
         border-radius: 3px;
         color: #000000;
     }}
@@ -259,7 +269,7 @@ lightModeStyleSheet = """
         font-family:{0};
         border: 1px solid white;
         background-color: rgba(255, 255, 255, 0.5);
-        font-size:16px;
+        font-size:14px;
         border-radius: 3px;
         color: #000000;
     }}
@@ -275,7 +285,7 @@ lightModeStyleSheet = """
         font-family:{0};
         border: 1px solid white;
         background-color: rgba(255, 255, 255, 0.5);
-        font-size:16px;
+        font-size:14px;
         border-radius: 3px;
         color: #000000;
     }}
@@ -304,7 +314,7 @@ lightModeStyleSheet = """
         background-image: none;
         border: 1px solid white;
         background-color: rgba(255, 255, 255, 0.5);
-        font-size:17px;
+        font-size:15px;
         border-radius: 3px;
         color: #000000;
     }}
@@ -490,14 +500,44 @@ lightModeStyleSheet = """
     {{
         border: none;
     }}
+    #settingsBackground {{
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 0px;
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border: 1px solid rgb(255, 255, 255);
+        border-right: none;
+    }}
+    #settingsCombo
+    {{   
+        border-image: none;
+        margin:0px;
+        border: 1px solid white;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 3px;
+        border-top-left-radius: 0px;
+        border-bottom-left-radius: 0px;
+        padding-left: 7px;
+        selection-background-color: #bac7ff;
+    }}
+    #settingsFullWidth
+    {{   
+        border-image: none;
+        margin:0px;
+        border: 1px solid white;
+        background-color: rgba(255, 255, 255, 0.5);
+        border-radius: 3px;
+        padding-left: 7px;
+        selection-background-color: #111111;
+    }}
     """
 
 darkModeStyleSheet = """
     *
     {{
         color: #DDDDDD;
-        font-weight: bold;
-        font-size:14px;
+        font-weight:  nomal;;
+        font-size: 14px;
         font-family:{0};
     }}
     QPushButton
@@ -654,10 +694,10 @@ darkModeStyleSheet = """
         font-family:{0};
         border: 1px solid black;
         background-color: rgba(0, 0, 0, 0.5);
-        font-size:16px;
+        font-size:14px;
         border-radius: 3px;
         color: #DDDDDD;
-        font-weight: bold;
+        font-weight:  nomal;;
     }}
     #normalbutton::hover
     {{
@@ -670,10 +710,10 @@ darkModeStyleSheet = """
         font-family:{0};
         border: 1px solid black;
         background-color: rgba(0, 0, 0, 0.5);
-        font-size:16px;
+        font-size:14px;
         border-radius: 3px;
         color: #DDDDDD;
-        font-weight: bold;
+        font-weight:  nomal;;
     }}
     #redbutton::hover
     {{
@@ -687,10 +727,10 @@ darkModeStyleSheet = """
         font-family:{0};
         border: 1px solid black;
         background-color: rgba(0, 0, 0, 0.5);
-        font-size:16px;
+        font-size:14px;
         border-radius: 3px;
         color: #DDDDDD;
-        font-weight: bold;
+        font-weight:  nomal;;
     }}
     #greenbutton::hover
     {{
@@ -707,7 +747,7 @@ darkModeStyleSheet = """
         font-size:15px;
         border-radius: 3px;
         color: #DDDDDD;
-        font-weight: bold;
+        font-weight:  nomal;;
         padding: 5px;
     }}
     QProgressBar
@@ -718,10 +758,10 @@ darkModeStyleSheet = """
         background-image: none;
         border: 1px solid black;
         background-color: rgba(0, 0, 0, 0.5);
-        font-size:17px;
+        font-size:15px;
         border-radius: 3px;
         color: #DDDDDD;
-        font-weight: bold;
+        font-weight:  nomal;;
     }}
     QProgressBar::chunk
     {{
@@ -794,6 +834,7 @@ darkModeStyleSheet = """
     {{
         background-color: rgba(0, 0, 0, 0.3);
         padding: 5px;
+        color: #dddddd;
         padding-left: 5px;
         outline: none;
         border-top: 1px solid rgb(0, 0, 0);
@@ -894,6 +935,36 @@ darkModeStyleSheet = """
     {{
         border: none;
     }}
+    #settingsBackground {{
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 0px;
+        border-top-left-radius: 3px;
+        border-bottom-left-radius: 3px;
+        border: 1px solid rgb(0, 0, 0);
+        border-right: none;
+    }}
+    #settingsCombo
+    {{   
+        border-image: none;
+        margin:0px;
+        border: 1px solid black;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 3px;
+        border-top-left-radius: 0px;
+        border-bottom-left-radius: 0px;
+        padding-left: 7px;
+        selection-background-color: #111111;
+    }}
+    #settingsFullWidth
+    {{   
+        border-image: none;
+        margin:0px;
+        border: 1px solid black;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 3px;
+        padding-left: 7px;
+        selection-background-color: #111111;
+    }}
     """
 
 def getTheme():
@@ -921,7 +992,13 @@ def getTheme():
         return 0
 
 def getWindowStyleScheme():
-    if(getTheme()==1):
+    if(settings["mode"] == "dark"):
+        theme = 0
+    elif(settings["mode"] == "light"):
+        theme = 1
+    else:
+        theme = getTheme()
+    if(theme==1):
         return lightModeStyleSheet.format(font, realpath)
     else:
         return darkModeStyleSheet.format(font, realpath)
@@ -930,8 +1007,9 @@ def checkModeThread():
     lastMode = getTheme()
     while True:
         if(lastMode!=getTheme()):
-            get_updater().call_in_main(zipManager.setStyleSheet, getWindowStyleScheme())
-            lastMode = getTheme()
+            if(settings["mode"] == "auto"):
+                get_updater().call_in_main(zipManager.setStyleSheet, getWindowStyleScheme())
+                lastMode = getTheme()
         time.sleep(1)
 
 
@@ -952,8 +1030,8 @@ def notify(title, body, icon='icon-zipmanager.png'):
     pass
 
 
-# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ #
-# -------------------------------------------------------------------------------- Update system ------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------ Update Functions ------------------------------------------------------------------------------- #
 def checkUpdates_py(bypass="False"):
     global zipManager, actualVersion
     try:
@@ -988,9 +1066,6 @@ def download_win(url):
         time.sleep(0.01)
         os.chdir("{0}/../SomePythonThings".format(os.environ['windir']))
         installationProgressBar('Downloading')
-        #get_updater().call_in_main(texts["create"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-        #get_updater().call_in_main(texts["extract"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-
         filedata = urlopen(url)
         datatowrite = filedata.read()
         filename = ""
@@ -998,8 +1073,6 @@ def download_win(url):
             f.write(datatowrite)
             filename = f.name
         installationProgressBar('Launching')
-        #get_updater().call_in_main(texts["create"].setPlainText, "Please follow on-screen instructions to continue")
-        #get_updater().call_in_main(texts["extract"].setPlainText, "Please follow on-screen instructions to continue")
         log("[   OK   ] file downloaded to C:\\SomePythonThings\\{0}".format(filename))
         get_updater().call_in_main(launch_win, filename)
     except Exception as e:
@@ -1050,8 +1123,6 @@ def downloadUpdates(links):
 
 def download_linux(links):
     get_updater().call_in_main(installationProgressBar, 'Downloading', 1, 4)
-    #get_updater().call_in_main(texts["create"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-    #get_updater().call_in_main(texts["extract"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
     p1 = os.system('cd; rm somepythonthings-zip-manager_update.deb; wget -O "somepythonthings-zip-manager_update.deb" {0}'.format(links['debian']))
     if(p1 == 0):  # If the download is done
         get_updater().call_in_main(install_linux_part1)
@@ -1072,8 +1143,6 @@ def install_linux_part1(again=False):
 
 def install_linux_part2(passwd, again=False):
     installationProgressBar('Installing', 3, 4)
-    #get_updater().call_in_main(texts["create"].setPlainText, "The program is being installed. Please wait until the installation process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-    #get_updater().call_in_main(texts["extract"].setPlainText, "The program is being installed. Please wait until the installation process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
     p1 = os.system('cd; echo "{0}" | sudo -S apt install ./"somepythonthings-zip-manager_update.deb"'.format(passwd))
     if(p1 == 0):  # If the installation is done
         p2 = os.system('cd; rm "./somepythonthings-zip-manager_update.deb"')
@@ -1093,12 +1162,10 @@ def install_linux_part2(passwd, again=False):
 def download_macOS(links):
     try:
         installationProgressBar('Downloading')
-        #get_updater().call_in_main(texts["create"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
-        #get_updater().call_in_main(texts["extract"].setPlainText, "The installer is being downloaded. Please wait until the download process finishes. This shouldn't take more than a couple of minutes.\n\nPlease DO NOT close the application")
         p1 = os.system('cd; rm somepythonthings-zip-manager_update.dmg')
         if(p1!=0):
             pass
-        wget.download(links['macos'], out='{0}/somepythonthings-music_update.dmg'.format(os.path.expanduser('~')))
+        wget.download(links['macos'], out='{0}/somepythonthings-zipManager_update.dmg'.format(os.path.expanduser('~')))
         get_updater().call_in_main(install_macOS)
         log("[   OK   ] Download is done, starting launch process.")
     except Exception as e:
@@ -1110,8 +1177,6 @@ def download_macOS(links):
 def install_macOS():
     installationProgressBar('Launching')
     time.sleep(0.2)
-    #get_updater().call_in_main(texts["create"].setPlainText, "Please follow on-screen instructions to continue")
-    #get_updater().call_in_main(texts["extract"].setPlainText, "Please follow on-screen instructions to continue")
     throw_info("SomePythonThings Zip Manager Updater", "The update file has been downloaded successfully. When you click OK, a folder will automatically be opened. Then drag the application on the folder to the applications folder link (also on the same folder).\nClick OK to continue")
     os.chdir(os.path.expanduser('~'))
     p2 = os.system('cd; open ./"somepythonthings-zip-manager_update.dmg"')
@@ -1120,15 +1185,227 @@ def install_macOS():
 
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
-# ---------------------------------------------------------------------------------- Functions ---------------------------------------------------------------------------------- #
+# ------------------------------------------------------------------------------ Settings Functions ----------------------------------------------------------------------------- #
+def saveSettings(silent=True, default_algorithm="Deflated", default_level=5, create_subdir=True, mode="auto"):
+    global defaultSettings
+    try:
+        os.chdir(os.path.expanduser('~'))
+        try:
+            os.chdir('.SomePythonThings')
+        except FileNotFoundError:
+            log("[  WARN  ] Can't acces .SomePythonThings folder, creating .SomePythonThings...")
+            os.mkdir(".SomePythonThings")
+            os.chdir('.SomePythonThings')
+        try:
+            os.chdir('Zip Manager')
+        except FileNotFoundError:
+            log("[  WARN  ] Can't acces Zip Manager folder, creating Zip Manager...")
+            os.mkdir("Zip Manager")
+            os.chdir('Zip Manager')
+        try:
+            settingsFile = open('settings.conf', 'w')
+            settingsFile.write(str({
+                "default_algorithm": default_algorithm,
+                "default_level":default_level,
+                "create_subdir":create_subdir,
+                "mode":mode,
+                }))
+            settingsFile.close()
+            if(not(silent)):
+                throw_info("SomePythonThings Zip Manager", "Settings saved successfuly")
+            log("[   OK   ] Settings saved successfully")
+            return True
+        except Exception as e:
+            throw_error('SomePythonThings Zip Manager', "An error occurred while loading the settings file. \n\nError details:\n"+str(e))
+            log('[        ] Creating new settings.conf')
+            saveSettings()
+            if(debugging):
+                raise e
+            return False
+    except Exception as e:
+        if(not(silent)):
+            throw_info("SomePythonThings Zip Manager", "Unable to save settings. \n\nError details:\n"+str(e))
+        log("[ FAILED ] Unable to save settings")
+        if(debugging):
+            raise e
+        return False
 
+def openSettings():
+    global defaultSettings
+    os.chdir(os.path.expanduser('~'))
+    try:
+        os.chdir('.SomePythonThings')
+        try:
+            os.chdir('Zip Manager')
+            try:
+                settingsFile = open('settings.conf', 'r')
+                settings = json.loads("\""+str(settingsFile.read().replace('\n', '').replace('\n\r', ''))+"\"")
+                settingsFile.close()
+                log('[        ] Loaded settings are: '+str(settings))
+                return literal_eval(settings)
+            except Exception as e:
+                log('[        ] Creating new settings.conf')
+                saveSettings()
+                if(debugging):
+                    raise e
+                return defaultSettings
+        except FileNotFoundError:
+            log("[  WARN  ] Can't acces Zip Manager folder, creating settings...")
+            saveSettings()
+            return defaultSettings
+    except FileNotFoundError:
+        log("[  WARN  ] Can't acces .SomePythonThings folder, creating settings...")
+        saveSettings()
+        return defaultSettings
+
+def openSettingsWindow():
+    global zipManager, settings, settingsWindow
+    settingsWindow = Window(zipManager)
+    settingsWindow.setMinimumSize(500, 250)
+    settingsWindow.setMaximumSize(500, 250)
+    settingsWindow.setWindowTitle("SomePythonThings Zip Manager Settings")
+    settingsWindow.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+    settingsWindow.setWindowFlag(QtCore.Qt.WindowMinimizeButtonHint, False)
+    settingsWindow.setWindowModality(QtCore.Qt.ApplicationModal)
+
+    modeSelector = QtWidgets.QComboBox(settingsWindow)
+    modeSelector.insertItem(0, 'Light')
+    modeSelector.insertItem(1, 'Dark')
+    if(_platform!='linux'):
+        modeSelector.insertItem(2, 'Auto')
+    modeSelector.resize(230, 30)
+    modeSelector.move(250, 20)
+    modeSelector.setObjectName("settingsCombo")
+    modeSelectorLabel = QtWidgets.QLabel(settingsWindow)
+    modeSelectorLabel.setText("Application mode: ")
+    modeSelectorLabel.move(20, 20)
+    modeSelectorLabel.setObjectName('settingsBackground')
+    modeSelectorLabel.resize(230, 30)
+
+
+    algorithmSelector = QtWidgets.QComboBox(settingsWindow)
+    algorithmSelector.insertItem(0, 'Deflated')
+    algorithmSelector.insertItem(1, 'BZIP2')
+    algorithmSelector.insertItem(2, 'LZMA')
+    algorithmSelector.insertItem(3, 'Without compression')
+    algorithmSelector.resize(230, 30)
+    algorithmSelector.setObjectName("settingsCombo")
+    algorithmSelector.move(250, 60)
+    algorithmSelectorLabel = QtWidgets.QLabel(settingsWindow)
+    algorithmSelectorLabel.setText("Default compression algorithm: ")
+    algorithmSelectorLabel.move(20, 60)
+    algorithmSelectorLabel.setObjectName('settingsBackground')
+    algorithmSelectorLabel.resize(230, 30)
+
+
+    levelSelector = QtWidgets.QComboBox(settingsWindow)
+    for i in range(1, 10):
+        levelSelector.insertItem(i, str(i))
+    levelSelector.resize(230, 30)
+    levelSelector.setCurrentIndex(settings["default_level"]-1)
+    levelSelector.setObjectName("settingsCombo")
+    levelSelector.move(250, 100)
+    levelSelectorLabel = QtWidgets.QLabel(settingsWindow)
+    levelSelectorLabel.setText("Default compression level: ")
+    levelSelectorLabel.move(20, 100)
+    levelSelectorLabel.setObjectName('settingsBackground')
+    levelSelectorLabel.resize(230, 30)
+
+    create_subfolder = QtWidgets.QCheckBox(settingsWindow)
+    create_subfolder.setChecked(settings["create_subdir"])
+    create_subfolder.setText("Extract files and folders to a new directory")
+    create_subfolder.setObjectName('settingsFullWidth')
+    create_subfolder.move(20, 140)
+    create_subfolder.resize(460, 30)
+
+    saveButton = QtWidgets.QPushButton(settingsWindow)
+    saveButton.setText("Save settings and close")
+    saveButton.resize(460, 30)
+    saveButton.move(20, 200)
+    saveButton.setObjectName('normalbutton')
+    saveButton.clicked.connect(partial(saveAndCloseSettings, modeSelector, algorithmSelector, settingsWindow, levelSelector, create_subfolder))
+
+    try:
+        if(settings['mode'].lower() == 'light'):
+            modeSelector.setCurrentIndex(0)
+        elif(settings['mode'].lower() == 'auto'):
+            if(_platform!='linux'):
+                modeSelector.setCurrentIndex(1)
+            else:
+                modeSelector.setCurrentIndex(0)
+        elif(settings['mode'].lower() == 'dark'):
+            modeSelector.setCurrentIndex(1)
+        else:
+            log("[  WARN  ] Could not detect mode!")
+    except KeyError:
+        log("[  WARN  ] Could not detect mode!")
+
+    try:
+        if(settings['default_algorithm'] == "Deflated"): #the "== False" is here to avoid eval of invalid values and crash of the program
+            algorithmSelector.setCurrentIndex(0)
+        elif(settings['default_algorithm'] == "BZIP2"):
+            algorithmSelector.setCurrentIndex(1)
+        elif(settings['default_algorithm'] == "LZMA"):
+            algorithmSelector.setCurrentIndex(2)
+        elif(settings['default_algorithm'] == "Without Compression"):
+            algorithmSelector.setCurrentIndex(3)
+        else:
+            log("[  WARN  ] Could not set default algorithm!")
+    except KeyError:
+        log("[  WARN  ] Could not set default algorithm!")
+
+    settingsWindow.show()
+
+def saveAndCloseSettings(modeSelector, algorithmSelector, settingsWindow, levelSelector, create_subfolder):
+    global settings, forceClose
+    if(algorithmSelector.currentIndex() == 0):
+        settings['default_algorithm'] = "Deflated"
+    elif(algorithmSelector.currentIndex() == 1):
+        settings['default_algorithm'] = "BZIP2"
+    elif(algorithmSelector.currentIndex() == 2):
+        settings['default_algorithm'] = "LZMA"
+    else:
+        settings['default_algorithm'] = "Without Compression"
+
+    settings["create_subdir"] = create_subfolder.isChecked()
+
+    if(modeSelector.currentIndex() == 0):
+        settings['mode'] = 'light'
+    elif(modeSelector.currentIndex() == 1):
+        settings['mode'] = 'dark'
+    else:
+        settings['mode'] = 'auto'
+
+    settings["default_level"] = levelSelector.currentIndex()+1
+
+    forceClose = True
+    settingsWindow.close()
+    zipManager.setStyleSheet(getWindowStyleScheme())
+    saveSettings(silent=False, create_subdir=settings['create_subdir'], default_level=settings['default_level'], default_algorithm=settings['default_algorithm'], mode=settings['mode'])
+
+    if(settings['default_algorithm'] == "Deflated"):
+        lists['compression'].setCurrentIndex(0)
+    elif(settings['default_algorithm'] == "BZIP2"):
+        lists['compression'].setCurrentIndex(1)
+    elif(settings['default_algorithm'] == "LZMA"):
+        lists['compression'].setCurrentIndex(2)
+    else:
+        lists['compression'].setCurrentIndex(3)
+
+    sliders.compress_level.setValue(settings["default_level"])
+
+    chkbx.create_subfolder.setChecked(settings["create_subdir"])
+
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
+# ---------------------------------------------------------------------------------- Functions ---------------------------------------------------------------------------------- #
 def extractFirstZip():
     log("[        ] Checking command line arguments")
     if zip != '':
         log('[   OK   ] Found one argument')
         try:
             if __name__ == "__main__":
-                openZIP(zip)
+                openZIP(zip.replace("\\", "/"))
         except Exception as e:
             if debugging:
                 raise e
@@ -1137,51 +1414,51 @@ def extractFirstZip():
 
 def getFileIcon(file):
     ext = getExtension(file).lower()
-    if(ext in 'accdb;mdb;accde;mde;accdw;'):
+    if(ext in 'accdb;mdb;accde;mde;accdw;'.split(';')):
         return realpath+'/icons-zipmanager/access.ico'
-    elif(ext in 'apk;'):
+    elif(ext in 'apk;'.split(';')):
         return realpath+'/icons-zipmanager/android.ico'
-    elif(ext in 'bin;'):
+    elif(ext in 'bin;'.split(';')):
         return realpath+'/icons-zipmanager/bin.ico'
-    elif(ext in 'java;jar;class;cpp;cc;cxx;h;hxx;hpp;js;project;ino;cs;'):
+    elif(ext in 'java;jar;class;cpp;cc;cxx;h;hxx;hpp;js;project;ino;cs;'.split(';')):
         return realpath+'/icons-zipmanager/code.ico'
-    elif(ext in 'conf;exe;deb;rpm;app;dat;dll;ini;log;sys:inf;cat;reg'):
+    elif(ext in 'conf;exe;deb;rpm;app;dat;dll;ini;log;sys:inf;cat;reg;'.split(';')):
         return realpath+'/icons-zipmanager/conf.ico'
-    elif(ext in 'bmp;paint;gpaint;gdraw'):
+    elif(ext in 'bmp;paint;gpaint;gdraw;'.split(';')):
         return realpath+'/icons-zipmanager/draw.ico'
-    elif(ext in 'xl;xlsx;xlsm;xlsb;csv;gsheet;ods;xml'):
+    elif(ext in 'xl;xlsx;xlsm;xlsb;csv;gsheet;ods;xml;'.split(';')):
         return realpath+'/icons-zipmanager/excel.ico'
-    elif(ext in 'swf;swt;swc;fla;wlv;'):
+    elif(ext in 'swf;swt;swc;fla;wlv;'.split(';')):
         return realpath+'/icons-zipmanager/flash.ico'
-    elif(ext in 'iso;img;cd;dvd;floppy;hdd;vdi;vmdk;disk;'):
+    elif(ext in 'iso;img;cd;dvd;floppy;hdd;vdi;vmdk;disk;'.split(';')):
         return realpath+'/icons-zipmanager/iso.ico'
-    elif(ext in 'md;'):
+    elif(ext in 'md;'.split(';')):
         return realpath+'/icons-zipmanager/md.ico'
-    elif(ext in 'mp3;wma;wav;ogg;flv;aiff;3gpp;m4a;mp2'):
-        return realpath+'/icons-zipmanager/music.ico'
-    elif(ext in 'pdf;pdfa'):
+    elif(ext in 'mp3;wma;wav;ogg;flv;aiff;3gpp;m4a;mp2;'.split(';')):
+        return realpath+'/icons-zipmanager/zipManager.ico'
+    elif(ext in 'pdf;pdfa;'.split(';')):
         return realpath+'/icons-zipmanager/pdf.ico'
-    elif(ext in 'png;jpg;jpeg;tiff;bmp;webp;svg;ico;gif;jfif'):
+    elif(ext in 'png;jpg;jpeg;tiff;bmp;webp;svg;ico;gif;jfif;'.split(';')):
         return realpath+'/icons-zipmanager/picture.ico'
-    elif(ext in 'pptx;ppt;pptm;odp;gslides'):
+    elif(ext in 'pptx;ppt;pptm;odp;gslides;'.split(';')):
         return realpath+'/icons-zipmanager/powerpoint.ico'
-    elif(ext in 'py;pyd;pyz;pym;'):
+    elif(ext in 'py;pyd;pyz;pym;'.split(';')):
         return realpath+'/icons-zipmanager/py.ico'
-    elif(ext in 'sh;zsh;ash;bash;esh;'):
+    elif(ext in 'sh;zsh;ash;bash;esh;'.split(';')):
         return realpath+'/icons-zipmanager/sh.ico'
-    elif(ext in 'txt;rtf;'):
+    elif(ext in 'txt;rtf;'.split(';')):
         return realpath+'/icons-zipmanager/text.ico'
-    elif(ext in 'torrent'):
+    elif(ext in 'torrent;'.split(';')):
         return realpath+'/icons-zipmanager/torrent.ico'
-    elif(ext in 'mp4;wmv;mkv;avi;'):
+    elif(ext in 'mp4;wmv;mkv;avi;'.split(';')):
         return realpath+'/icons-zipmanager/video.ico'
-    elif(ext in 'html;htm;php;mhtml;url;webp;web;webm'):
+    elif(ext in 'html;htm;php;mhtml;url;webp;web;webm;'.split(';')):
         return realpath+'/icons-zipmanager/web.ico'
-    elif(ext in 'docx;doc;dotx;dotm;dot;odt;gdoc'):
+    elif(ext in 'docx;doc;dotx;dotm;dot;odt;gdoc;'.split(';')):
         return realpath+'/icons-zipmanager/word.ico'
-    elif(ext in 'psd;'):
+    elif(ext in 'psd;'.split(';')):
         return realpath+'/icons-zipmanager/photoshop.ico'
-    elif(ext in 'zip;rar;7z;'):
+    elif(ext in 'zip;rar;7z;'.split(';')):
         return realpath+'/icons-zipmanager/zip.ico'
     else:
         return realpath+'/icons-zipmanager/unknown.ico'   
@@ -1682,6 +1959,7 @@ def extractZip():
         throw_warning("SomePythonThings Zip Manager", "Please select one zip file to start the extraction.")
     else:
         try:
+            zip = zip.replace("\\", "/")
             log('[        ] Dialog in proccess')
             directory = QtWidgets.QFileDialog.getExistingDirectory(zipManager, 'Select the destination folder where the zip is going to be extracted')
             if(directory == ''):
@@ -1694,7 +1972,7 @@ def extractZip():
                 print(directory)
                 if(chkbx.create_subfolder.isChecked()):
                     log("[        ] Creating subdirectory...")
-                    directory += "/extracted_files_from_"+zip.split('/')[-1].lower()
+                    directory += "/"+zip.split('/')[-1]+"_extracted"
                 log("[  INFO  ] Zip file will be extracted into "+directory)
                 t = Thread(target=heavyExtract, args=(directory, zip))
                 t.daemon = True
@@ -1760,6 +2038,7 @@ def heavyExtract(directory, zip, password=""):
         else:
             log('[   OK   ] Zip file extracted sucessfully')
             get_updater().call_in_main(throw_info,"SomePythonThings Zip Manager", 'Zip file extracted sucessfully')
+        openOnExplorer(directory, force=True)
     except Exception as e:
         if debugging:
             raise e
@@ -1767,35 +2046,41 @@ def heavyExtract(directory, zip, password=""):
         log('[ FAILED ] Error occurred while extracting zip File')
         get_updater().call_in_main(throw_error, "SomePythonThings Zip Manager", 'Unable to extract the zip\n\nReason:\n'+str(e))
 
-def throw_info(title, body, icon="icon-zipmanager.png"):
+def throw_info(title, body, icon="zip_ok.ico"):
     if(icon==False):
-        icon='calc-icon.png'
+        icon='zip_ok.ico'
     log("[  INFO  ] "+body)
     msg = QtWidgets.QMessageBox(zipManager)
-    if(os.path.exists(str(realpath)+"/"+str(icon))):
-        msg.setIconPixmap(QtGui.QPixmap(str(realpath)+"/"+str(icon)).scaledToHeight(64))
+    if(os.path.exists(str(realpath)+"/icons-zipmanager/"+str(icon))):
+        msg.setIconPixmap(QtGui.QPixmap(str(realpath)+"/icons-zipmanager/"+str(icon)).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
     else:
         msg.setIcon(QtWidgets.QMessageBox.Information)
     msg.setText(body)
     msg.setWindowTitle(title)
     msg.exec_()
 
-def throw_warning(title, body, warning=None):
+def throw_warning(title, body, warning=None, icon="zip_warn.ico"):
     global zipManager
     log("[  WARN  ] "+body)
     if(warning != None ):
         log("\t Warning reason: "+warning)
     msg = QtWidgets.QMessageBox(zipManager)
-    msg.setIcon(QtWidgets.QMessageBox.Warning)
+    if(os.path.exists(str(realpath)+"/icons-zipmanager/"+str(icon))):
+        msg.setIconPixmap(QtGui.QPixmap(str(realpath)+"/icons-zipmanager/"+str(icon)).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
+    else:
+        msg.setIcon(QtWidgets.QMessageBox.Warning)
     msg.setText(body)
     msg.setWindowTitle(title)
     msg.exec_()
 
-def throw_error(title, body, error="Not Specified"):
+def throw_error(title, body, error="Not Specified", icon="zip_error.ico"):
     global zipManager
     log("[ FAILED ] "+body+"\n\tError reason: "+error)
     msg = QtWidgets.QMessageBox(zipManager)
-    msg.setIcon(QtWidgets.QMessageBox.Critical)
+    if(os.path.exists(str(realpath)+"/icons-zipmanager/"+str(icon))):
+        msg.setIconPixmap(QtGui.QPixmap(str(realpath)+"/icons-zipmanager/"+str(icon)).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
+    else:
+        msg.setIcon(QtWidgets.QMessageBox.Critical)
     msg.setText(body)
     msg.setWindowTitle(title)
     msg.exec_()
@@ -1827,11 +2112,18 @@ def openOnExplorer(file, force=False):
             os.system('start explorer /select,"{0}"'.format(file.replace("/", "\\")))
         except:
             log("[  WARN  ] Unable to show file {0} on file explorer.".format(file))
-    elif (_platform == 'darwin' and force):
-        try:
-            os.system("open "+file)
-        except:
-            log("[  WARN  ] Unable to show file {0} on finder.".format(file))
+    elif (_platform == 'darwin'):
+        if(force):
+            try:
+                os.system("open "+file)
+            except:
+                log("[  WARN  ] Unable to show file {0} on finder.".format(file))
+        else:
+            try:
+                os.system("open "+("/".join(str(file).split("/")[:-1])))
+            except:
+                log("[  WARN  ] Unable to show file {0} on finder.".format(file))
+
     elif (_platform == 'linux' or _platform == 'linux2'):
         try:
             t = Thread(target=os.system, args=("xdg-open "+file,))
@@ -1874,16 +2166,16 @@ def toggleExtractingState():
 def resizeWidgets():
     global zipManager, progressbars, font
 
-    separation20=int((zipManager.height()/100)*3.2)
-    separation10=int((zipManager.height()/100)*1.6)
+    separation20=20
+    separation10=10
 
     btn_full_width = int((zipManager.width()/2)-40)-10
     btn_half_width = int((((zipManager.width()/2)-40)/2)-10)
     # btn_full_height = int(((zipManager.height())-25)/5)+10 # This is saved for possible future use
-    btn_half_height = int(((zipManager.height())-25)/10)
-    btn_quarter_height = int(((zipManager.height())-25)/20)-5
+    btn_half_height = 70#int(((zipManager.height())-25)/10)
+    btn_quarter_height = 30#int(((zipManager.height())-25)/20)-5
     if(_platform == 'darwin'):
-        btn_1st_row = separation20+12
+        btn_1st_row = separation20+25
     else:
         btn_1st_row = separation20+25
     btn_2nd_row = btn_1st_row+btn_quarter_height+separation10
@@ -1894,17 +2186,17 @@ def resizeWidgets():
     btn_3rd_column = int(zipManager.width()/2)+btn_1st_column
     btn_4th_column = int(zipManager.width()/2)+btn_2nd_column
 
-    text_width = btn_full_width
-    text_height = int((((zipManager.height())-25)/100*48))
     text_1st_row = int(btn_4th_row+btn_quarter_height+separation20)
     text_1st_column = btn_1st_column
     text_2nd_column = btn_3rd_column
+    text_width = btn_full_width
+    text_height = int((zipManager.height())-25)-text_1st_row - (30+10+70+20)
 
     pgsbar_1st_column = text_1st_column
     pgsbar_2nd_column = text_2nd_column
     pgsbar_1st_row = text_1st_row+text_height+separation20
     pgsbar_width = text_width
-    pgsbar_height = int((((zipManager.height())-25)/100*5))
+    pgsbar_height = 30
 
     btn_cancel_1st_row = pgsbar_1st_row+pgsbar_height+separation20
 
@@ -1958,145 +2250,161 @@ def resizeWidgets():
 # ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- #
 # ---------------------------------------------------------------------------------- Main Code ---------------------------------------------------------------------------------- #
 if __name__ == "__main__":
-    if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
-        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
-
-    if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
-        QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
-    
-    os.chdir(os.path.expanduser("~"))
-
-
-    tempFile = tempfile.TemporaryFile()
-    if(len(sys.argv)>1):
-        zip = sys.argv[1]
-        if('debug' in zip):
-            debugging=True
-    else:
-        zip=''
-
-    log("[        ] Actual directory is {0}".format(os.getcwd()))
-
-    if _platform == "linux" or _platform == "linux2":
-        log("[   OK   ] OS detected is linux")
-        realpath="/bin"
-        font = "Ubuntu Mono"
-
-    elif _platform == "darwin":
-        log("[   OK   ] OS detected is macOS")
-        font = "Courier"
-        realpath = "/Applications/SomePythonThings Zip Manager.app/Contents/Resources"
-
-    elif _platform == "win32":
-        if int(platform.release()) >= 10: #Font check: os is windows 10
-            font = "Cascadia Mono"#Cascadia Mono
-            log("[   OK   ] OS detected is win32 release 10 ")
-        else:# os is windows 7/8
-            font="Consolas"
-            log("[   OK   ] OS detected is win32 release 8 or less ")
-        if(os.path.exists("\\Program Files\\SomePythonThingsZipManager")):
-            realpath = "/Program Files/SomePythonThingsZipManager"
-            log("[   OK   ] Directory set to /Program Files/SomePythonThingsZipManager/")
-        else:
-            realpath = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
-            log("[  WARN  ] Directory /Program Files/SomePythonThingsZipManager/ not found, getting working directory...")
-    else:
-        log("[  WARN  ] Unable to detect OS")
-
-    log("[   OK   ] Platform is {0}, font is {1} and real path is {2}".format(_platform, font, realpath))
-
-
-
-    background_picture_path='{0}/background-zipmanager.png'.format(realpath.replace('c:', 'C:'))
-    black_picture_path='{0}/black-zipmanager.png'.format(realpath.replace('c:', 'C:'))
-
-    class TreeWidget(QtWidgets.QTreeWidget):
-
-        def __init__(self, parent):
-            super().__init__(parent)
-            self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-            self.setDropIndicatorShown(True)
-            self.setAcceptDrops(True)
-            self.setSupportedDropActions = QtCore.Qt.CopyAction | QtCore.Qt.MoveAction
-
-        def dragEnterEvent(self, e):
-            e.accept()
-
-        def dragMoveEvent(self, e):
-            e.accept()
-
-        def dropEvent(self, e):
-            openFile(str(e.mimeData().text().replace("file://", "")))
-
-    class Ui_MainWindow(object):
-        def setupUi(self, MainWindow):
-            global background_picture_path
-            MainWindow.setObjectName("MainWindow")
-            MainWindow.setWindowTitle("MainWindow")
-            self.centralwidget = QtWidgets.QWidget(MainWindow)
-            self.centralwidget.setObjectName("centralwidget")
-            self.centralwidget.setStyleSheet("""border-image: url(\""""+background_picture_path+"""\") 0 0 0 0 stretch stretch;""")
-            log("[        ] Background picture real path is "+background_picture_path)
-            MainWindow.setCentralWidget(self.centralwidget)
-            QtCore.QMetaObject.connectSlotsByName(MainWindow)
-
-    class Window(QtWidgets.QMainWindow):
-        resized = QtCore.Signal()
-        keyRelease = QtCore.Signal(int)
-
-        def __init__(self, parent=None):
-            super(Window, self).__init__(parent=parent)
-            ui = Ui_MainWindow()
-            ui.setupUi(self)
-            self.resized.connect(resizeWidgets)
-
-        def resizeEvent(self, event):
-            self.resized.emit()
-            return super(Window, self).resizeEvent(event)
-
-        def closeEvent(self, event):
-            if(compressionRunning):
-                log("[  WARN  ] Compresion running!")
-                if(QtWidgets.QMessageBox.question(self, "Warning", "A compression is running! Do you want to quit anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes):
-                    log("[   OK   ] Quitting anyway...")
-                    event.accept()
-                else:
-                    log("[   OK   ] Not quitting")
-                    event.ignore()
-            elif(extractionRunning):
-                log("[  WARN  ] Extraction running!")
-                if(QtWidgets.QMessageBox.question(self, "Warning", "An extraction is running! Do you want to quit anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes):
-                    log("[   OK   ] Quitting anyway...")
-                    event.accept()
-                else:
-                    log("[   OK   ] Not quitting")
-                    event.ignore()
-            else:
-                event.accept()
-
-    class KillableThread(Thread): 
-        def __init__(self, *args, **keywords): 
-            Thread.__init__(self, *args, **keywords) 
-            self.shouldBeRuning = True
-        def start(self): 
-            self._run = self.run 
-            self.run = self.settrace_and_run
-            Thread.start(self) 
-        def settrace_and_run(self): 
-            sys.settrace(self.globaltrace) 
-            self._run()
-        def globaltrace(self, frame, event, arg): 
-            return self.localtrace if event == 'call' else None
-        def localtrace(self, frame, event, arg): 
-            if not(self.shouldBeRuning) and event == 'line': 
-                raise SystemExit() 
-            return self.localtrace 
-
-    QtWidgets.QApplication.setStyle('fusion')
-    app = QtWidgets.QApplication(sys.argv)
-    QtWidgets.QApplication.setStyle('fusion')
-    zipManager = Window()
     try:
+
+        if hasattr(QtCore.Qt, 'AA_EnableHighDpiScaling'):
+            QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+
+        if hasattr(QtCore.Qt, 'AA_UseHighDpiPixmaps'):
+            QtWidgets.QApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
+        
+        os.chdir(os.path.expanduser("~"))
+
+
+        tempFile = tempfile.TemporaryFile()
+        if(len(sys.argv)>1):
+            zip = sys.argv[1]
+            if('debug' in zip):
+                debugging=True
+        else:
+            zip=''
+
+        log("[        ] Actual directory is {0}".format(os.getcwd()))
+
+        if _platform == "linux" or _platform == "linux2":
+            log("[   OK   ] OS detected is linux")
+            realpath="/bin"
+            font = "Ubuntu"
+
+        elif _platform == "darwin":
+            log("[   OK   ] OS detected is macOS")
+            font = "Lucida Grande"
+            realpath = "/Applications/SomePythonThings Zip Manager.app/Contents/Resources"
+
+        elif _platform == "win32":
+            if int(platform.release()) >= 10: #Font check: os is windows 10
+                font = "Segoe UI"#Cascadia Mono
+                log("[   OK   ] OS detected is win32 release 10 ")
+            else:# os is windows 7/8
+                font="Segoe UI"
+                log("[   OK   ] OS detected is win32 release 8 or less ")
+            if(os.path.exists("\\Program Files\\SomePythonThingsZipManager")):
+                realpath = "/Program Files/SomePythonThingsZipManager"
+                log("[   OK   ] Directory set to /Program Files/SomePythonThingsZipManager/")
+            else:
+                realpath = os.path.dirname(os.path.realpath(__file__)).replace('\\', '/')
+                log("[  WARN  ] Directory /Program Files/SomePythonThingsZipManager/ not found, getting working directory...")
+        else:
+            log("[  WARN  ] Unable to detect OS")
+
+        log("[   OK   ] Platform is {0}, font is {1} and real path is {2}".format(_platform, font, realpath))
+
+
+
+        background_picture_path='{0}/background-zipmanager.png'.format(realpath.replace('c:', 'C:'))
+        black_picture_path='{0}/black-zipmanager.png'.format(realpath.replace('c:', 'C:'))
+
+        class TreeWidget(QtWidgets.QTreeWidget):
+
+            def __init__(self, parent):
+                super().__init__(parent)
+                self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+                self.setDropIndicatorShown(True)
+                self.setAcceptDrops(True)
+                self.setSupportedDropActions = QtCore.Qt.CopyAction | QtCore.Qt.MoveAction
+
+            def dragEnterEvent(self, e):
+                e.accept()
+
+            def dragMoveEvent(self, e):
+                e.accept()
+
+            def dropEvent(self, e):
+                openFile(str(e.mimeData().text().replace("file://", "")))
+
+        class Ui_MainWindow(object):
+            def setupUi(self, MainWindow):
+                global background_picture_path
+                self.centralwidget = QtWidgets.QWidget(MainWindow)
+                self.centralwidget.setObjectName("centralwidget")
+                self.centralwidget.setStyleSheet("""border-image: url(\""""+background_picture_path+"""\") 0 0 0 0 stretch stretch;""")
+                log("[        ] Background picture real path is "+background_picture_path)
+                MainWindow.setCentralWidget(self.centralwidget)
+                QtCore.QMetaObject.connectSlotsByName(MainWindow)
+
+        class Window(QtWidgets.QMainWindow):
+            resized = QtCore.Signal()
+            keyRelease = QtCore.Signal(int)
+
+            def __init__(self, parent=None):
+                super(Window, self).__init__(parent=parent)
+                ui = Ui_MainWindow()
+                ui.setupUi(self)
+                self.resized.connect(resizeWidgets)
+
+            def resizeEvent(self, event):
+                self.resized.emit()
+                return super(Window, self).resizeEvent(event)
+
+            def closeEvent(self, event):
+                if(compressionRunning):
+                    log("[  WARN  ] Compresion running!")
+                    if(QtWidgets.QMessageBox.question(self, "Warning", "A compression is running! Do you want to quit anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes):
+                        log("[   OK   ] Quitting anyway...")
+                        event.accept()
+                    else:
+                        log("[   OK   ] Not quitting")
+                        event.ignore()
+                elif(extractionRunning):
+                    log("[  WARN  ] Extraction running!")
+                    if(QtWidgets.QMessageBox.question(self, "Warning", "An extraction is running! Do you want to quit anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes):
+                        log("[   OK   ] Quitting anyway...")
+                        event.accept()
+                    else:
+                        log("[   OK   ] Not quitting")
+                        event.ignore()
+                else:
+                    event.accept()
+
+        class KillableThread(Thread): 
+            def __init__(self, *args, **keywords): 
+                Thread.__init__(self, *args, **keywords) 
+                self.shouldBeRuning = True
+
+            def start(self): 
+                self._run = self.run 
+                self.run = self.settrace_and_run
+                Thread.start(self) 
+
+            def settrace_and_run(self): 
+                sys.settrace(self.globaltrace) 
+                self._run()
+
+            def globaltrace(self, frame, event, arg): 
+                return self.localtrace if event == 'call' else None
+                
+            def localtrace(self, frame, event, arg): 
+                if not(self.shouldBeRuning) and event == 'line': 
+                    raise SystemExit() 
+                return self.localtrace 
+
+        QtWidgets.QApplication.setStyle('fusion')
+        app = QtWidgets.QApplication(sys.argv)
+        QtWidgets.QApplication.setStyle('fusion')
+        zipManager = Window()
+
+        try:
+            readSettings = openSettings()
+            i = 0
+            for key in readSettings.keys():
+                settings[key] = readSettings[key]
+                i +=1
+            log("[   OK   ] Settings loaded (settings={0})".format(str(settings)))
+        except Exception as e:
+            log("[ FAILED ] Unable to read settings! ({0})".format(str(e)))
+            if(debugging):
+                raise e
+
         zipManager.resize(1200, 700)
         zipManager.setWindowTitle('SomePythonThings Zip Manager') 
         zipManager.setStyleSheet(getWindowStyleScheme())
@@ -2158,6 +2466,9 @@ if __name__ == "__main__":
         zipInfoTable.setShowGrid(False)
         zipInfoTable.setEditTriggers(QtWidgets.QAbstractItemView.NoEditTriggers)
         zipInfoTable.setColumnWidth(0, 100)
+        zipInfoTable.setRowHeight(0, 24)
+        zipInfoTable.setRowHeight(1, 24)
+        zipInfoTable.setRowHeight(2, 24)
         zipInfoTable.horizontalHeader().setStretchLastSection(True)
         zipInfoTable.setVerticalScrollMode(QtWidgets.QTreeWidget.ScrollPerPixel)
         zipInfoTable.setHorizontalScrollMode(QtWidgets.QTreeWidget.ScrollPerPixel)
@@ -2174,6 +2485,15 @@ if __name__ == "__main__":
             lists['compression'].insertItem(i, compression_type)
             i += 1
 
+        if(settings['default_algorithm'] == "Deflated"):
+            lists['compression'].setCurrentIndex(0)
+        elif(settings['default_algorithm'] == "BZIP2"):
+            lists['compression'].setCurrentIndex(1)
+        elif(settings['default_algorithm'] == "LZMA"):
+            lists['compression'].setCurrentIndex(2)
+        else:
+            lists['compression'].setCurrentIndex(3)
+
         lbls.compress_level = QtWidgets.QLabel(zipManager)
         lbls.compress_level.setText("Select compression rate (1-9): 5")
         lbls.compress_level.setObjectName("halfTopLabel")
@@ -2187,12 +2507,13 @@ if __name__ == "__main__":
         sliders.compress_level.setSingleStep(1)
         sliders.compress_level.setPageStep(1)
         sliders.compress_level.valueChanged.connect(changeCompressionRate)
+        sliders.compress_level.setValue(settings["default_level"])
 
         chkbx.create_subfolder = QtWidgets.QCheckBox(zipManager)
         chkbx.create_subfolder.setChecked(True)
         chkbx.create_subfolder.setText("Create subfolder")
         chkbx.create_subfolder.setObjectName('quarterWidget')
-
+        chkbx.create_subfolder.setChecked(settings["create_subdir"])
 
         filesToCompress = TreeWidget(zipManager)
         filesToCompress.setVerticalScrollMode(QtWidgets.QTreeWidget.ScrollPerPixel)
@@ -2204,10 +2525,10 @@ if __name__ == "__main__":
         filesToCompress.setColumnWidth(0, 350)
         filesToCompress.setColumnWidth(1, 100)
         filesToCompress.setColumnWidth(2, 100)
+        filesToCompress.setFocusPolicy(QtCore.Qt.NoFocus)
         filesToCompress.setIconSize(QtCore.QSize(24, 24))
         filesToCompress.setColumnWidth(3, 400)
         filesToCompress.setColumnHidden(2, False)
-
 
         filesToExtract = TreeWidget(zipManager)
         filesToExtract.setVerticalScrollMode(QtWidgets.QTreeWidget.ScrollPerPixel)
@@ -2223,29 +2544,46 @@ if __name__ == "__main__":
         filesToExtract.setColumnWidth(3, 300)
         filesToExtract.setColumnHidden(2, False)
 
-
         menuBar = zipManager.menuBar()
+        menuBar.setNativeMenuBar(False)
         fileMenu = menuBar.addMenu("File")
         settingsMenu = menuBar.addMenu("Settings")
         helpMenu = menuBar.addMenu("Help")
+
+
+
         quitAction = QtWidgets.QAction(" Quit", zipManager)
-        openHelpAction = QtWidgets.QAction(" Online manual", zipManager)
-        aboutAction = QtWidgets.QAction(" About SomePythonThings Zip Manager", zipManager)
+        quitAction.triggered.connect(quitZipManager)
+        fileMenu.addAction(quitAction)
+        
+        openSettingsAction = QtWidgets.QAction(" Settings    ", zipManager)
+        openSettingsAction.triggered.connect(openSettingsWindow)
+        settingsMenu.addAction(openSettingsAction)
+        
         logAction = QtWidgets.QAction(" Open Log", zipManager)
+        logAction.triggered.connect(openLog)
+        settingsMenu.addAction(logAction)
+        
         reinstallAction = QtWidgets.QAction(" Re-install SomePythonThings Zip Manager", zipManager)
+        reinstallAction.triggered.connect(reinstallZipManager)
+        settingsMenu.addAction(reinstallAction)
+        
+        openHelpAction = QtWidgets.QAction(" Online manual", zipManager)
+        openHelpAction.triggered.connect(openHelp)
+        helpMenu.addAction(openHelpAction)
+        
         updatesAction = QtWidgets.QAction(" Check for updates", zipManager)
         updatesAction.triggered.connect(checkDirectUpdates)
-        quitAction.triggered.connect(quitZipManager)
-        reinstallAction.triggered.connect(reinstallZipManager)
-        logAction.triggered.connect(openLog)
-        aboutAction.triggered.connect(partial(throw_info, "About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(actualVersion)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe iconset has a CC Non-Commercial Atribution 4.0 License"))
-        openHelpAction.triggered.connect(openHelp)
-        fileMenu.addAction(quitAction)
-        settingsMenu.addAction(logAction)
-        settingsMenu.addAction(reinstallAction)
-        helpMenu.addAction(openHelpAction)
         helpMenu.addAction(updatesAction)
+        
+        aboutAction = QtWidgets.QAction(" About SomePythonThings Zip Manager", zipManager)
+        aboutAction.triggered.connect(partial(throw_info, "About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(actualVersion)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe iconset has a CC Non-Commercial Atribution 4.0 License"))
         helpMenu.addAction(aboutAction)
+
+        if(_platform=='darwin'):
+            openSettingsAction = QtWidgets.QAction("Settings...    ", zipManager)
+            openSettingsAction.triggered.connect(openSettingsWindow)
+            settingsMenu.addAction(openSettingsAction)
         
         if(_platform == "win32"):
             from PySide2 import QtWinExtras
@@ -2255,21 +2593,30 @@ if __name__ == "__main__":
             taskbprogress.setRange(0, 100)
             taskbprogress.setValue(0)
             taskbprogress.show()
-        resizeWidgets()
+
         try:
             if(os.path.isfile(zip)):
                 extractFirstZip()
         except:
             zip = ''
+
         Thread(target=updates_thread, daemon=True).start()
         Thread(target=checkModeThread, daemon=True).start()
+
         log("[        ] Program loaded, starting UI...")
         zipManager.show()
         log("[   OK   ] UI Loaded")
+
         app.exec_()
+
+        
+
     except Exception as e:
-        log(f"[ FAILED ] A FATAL ERROR OCCURRED. PROGRAM WILL BE TERMINATED AFTER ERROR REPORT")
-        throw_error('SomePythonThings Zip Manager', "SomePythonThings Zip Manager crashed because of a fatal error.\n\nAn Error Report will be generated and opened automatically\n\nSending the report would be very appreciated. Sorry for any inconveniences")
+        log("[ FAILED ] A FATAL ERROR OCCURRED. PROGRAM WILL BE TERMINATED AFTER ERROR REPORT")
+        try:
+            throw_error('SomePythonThings Zip Manager', "SomePythonThings Zip Manager crashed because of a fatal error.\n\nAn Error Report will be generated and opened automatically\n\nSending the report would be very appreciated. Sorry for any inconveniences")
+        except:
+            pass
         os_info = f"" + \
         f"                        OS: {platform.system()}\n"+\
         f"                   Release: {platform.release()}\n"+\
@@ -2278,9 +2625,14 @@ if __name__ == "__main__":
         f"                   Program: SomePythonThings Zip Manager Version {actualVersion}"+\
         "\n\n-----------------------------------------------------------------------------------------"
         traceback_info = "Traceback (most recent call last):\n"
-        for line in traceback.extract_tb(e.__traceback__).format():
-            traceback_info += line
-        traceback_info += f"\n{type(e).__name__}: {str(e)}"
+        try:
+            for line in traceback.extract_tb(e.__traceback__).format():
+                traceback_info += line
+            traceback_info += f"\n{type(e).__name__}: {str(e)}"
+        except:
+            traceback_info += "\nUnable to get traceback"
+            if(debugging):
+                raise e
         f = open(tempDir.name.replace('\\', '/')+'/log.txt', 'r')
         webbrowser.open("https://www.somepythonthings.tk/error-report/?appName=SomePythonThings Zip Manager&errorBody="+os_info.replace('\n', '{newline}').replace(' ', '{space}')+"{newline}{newline}{newline}{newline}SomePythonThings Zip Manager Log:{newline}"+str(f.read()+"\n\n\n\n"+traceback_info).replace('\n', '{newline}').replace(' ', '{space}'))
         f.close()
