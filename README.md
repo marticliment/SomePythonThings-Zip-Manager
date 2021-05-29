@@ -1,7 +1,7 @@
 <h1>SomePythonThings Zip Manager</h1>
 SomePythonThings Zip manager is an application that lets you compress and extract files in a clever way. Not as other compression applications, SomePythonThings Zip Manager has been developed to be useful. SomePythonThings Zip Manager is an open-source application, and it's also 100% free.<br><br>
 <img src="media/banner.png" style="border-radius:5px;">
-<br><br>
+<br>
 <h2>Features:</h2>
  - Fast compression and extraction<br>
  - Drag-and-drop support to compress and extract files<br>
