@@ -306,6 +306,7 @@ class Window(QtWidgets.QMainWindow):
         return super(Window, self).resizeEvent(event)
 
     def closeEvent(self, event: QtCore.QEvent) -> None:
+        self.themeThread.terminate()
         if(self.isCompressing):
             log("[  WARN  ] Compresion running!")
             if(QtWidgets.QMessageBox.question(self, "Warning", "A compression is running! Do you want to quit anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes):

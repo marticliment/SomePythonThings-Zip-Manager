@@ -230,7 +230,8 @@ class Compressor(QtWidgets.QWidget):
         if(_platform=="win32"):
             c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         elif(_platform=="darwin"):
-            c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            c = os.system(f"open \"{file}\"")
+            #c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         else:
             c = os.system(f"xdg-open \"{file}\"")
             #c = subprocess.run(f"xdg-open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)

@@ -87,3 +87,4 @@ class MainApplication():
                 raise e
 
 MainApplication()
+sys.exit(0)
