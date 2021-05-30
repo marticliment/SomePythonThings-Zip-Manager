@@ -34,5 +34,5 @@ jobs:
     - name: Build with PyInstaller
       run: |
         pip install pyinstaller
-        dir
+        chmod +x ./build_linux.sh
         ./build_linux.sh
