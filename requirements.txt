@@ -3,3 +3,4 @@ darkdetect
 qtmodern
 PySide2
 qt-thread-updater
+pyinstaller

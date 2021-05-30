@@ -9,7 +9,7 @@ package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss
 
 
 a = Analysis(['__init__.py'],
-             pathex=['/Volumes/Disc Local/Users/marti/SPTPrograms/SomePythonThings-Zip-Manager/zipmanager'],
+             pathex=['/Users/marticlilop/SPTPrograms/SomePythonThings-Zip-Manager/zipmanager'],
              binaries=[],
              datas=[('res', 'res'), ('Compressor.py', '.'), ('Extractor.py', '.'), ('CustomWidgets.py', '.'), ('MainWindow.py', '.'), ('Tools.py', '.'), ('Updater.py', '.'), ('Welcome.py', '.')],
              hiddenimports=['pkg_resources.py2_warn', ".Tools.*", "json", "darkdetect", "qtmodern", "qt_thread_updater", "wget", "PySide2.*", "zipfile", "threading", "PySide2"],
@@ -41,21 +41,13 @@ exe = EXE(pyz,
           upx=True,
           upx_exclude=[],
           runtime_tmpdir=None,
-          console=False,
-          windowed=True)
-coll = COLLECT(exe,
-               a.binaries,
-               a.zipfiles,
-               a.datas,
-               strip=False,
-               upx=True,
-               upx_exclude=[],
-               name='SomePythonThings Zip Manager')
-app = BUNDLE(coll,
+          console=False)
+
+app = BUNDLE(exe,
          name='SomePythonThings Zip Manager.app',
          icon='icon.icns',
          bundle_identifier=None,
-         version=input("Instert version code string (0.0.0): "),
+         version=input("Insert version code string (0.0.0): "),
          info_plist={
             'NSRequiresAquaSystemAppearance': False,
             'NSPrincipalClass': 'NSApplication',
