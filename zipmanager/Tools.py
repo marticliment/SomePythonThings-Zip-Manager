@@ -1,4 +1,4 @@
-debugging = False
+debugging = True
 version = 4.0
 
 

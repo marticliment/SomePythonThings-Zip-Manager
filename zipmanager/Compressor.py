@@ -249,14 +249,12 @@ class Compressor(QtWidgets.QWidget):
 
     def removeSelectedFiles(self) -> None:
         selectedFiles = self.treeWidget.selectedItems()
-        actualFiles = []
-        for file in self.files:
-            actualFiles.append(file[0])
         for item in selectedFiles:
-            self.treeWidget.takeTopLevelItem(self.treeWidget.indexOfTopLevelItem(item))
-            actualFiles = []
-            for file in self.files:
-                actualFiles.append(file[0])
+            if(item.parent()):
+                i = item.parent().takeChild(item.parent().indexOfChild(item))
+            else:
+                i = self.treeWidget.takeTopLevelItem(self.treeWidget.indexOfTopLevelItem(item))
+            del i
         log('[   OK   ] Selected files removed from file list')
 
     def openFile(self, openFiles="None"):
