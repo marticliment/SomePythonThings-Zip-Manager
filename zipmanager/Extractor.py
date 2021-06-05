@@ -1,7 +1,7 @@
 
 from PySide2 import QtWidgets, QtGui, QtCore
 from CustomWidgets import TreeWidget, ProgressUpdater, KillableThread, ComboBoxAction, SpinBoxAction, CheckBoxAction
-
+from functools import partial
 from Tools import *
 #from Tools import log, debugging, _platform, getFileIcon, getPath, openOnExplorer, notify, settings, tempDir
 import os, zipfile, time, sys
@@ -99,6 +99,7 @@ class Extractor(QtWidgets.QWidget):
         self.treeWidget.setSortingEnabled(True)
         self.treeWidget.setEmptyText("Select a zip file to start")
         self.treeWidget.connectFileDragEvent(self.openZip)
+        self.treeWidget.setHeaderLabels(["Name", "Size", "Extract or skip"])
         self.treeWidget.setColumnHidden(3, True)
         self.treeWidget.setColumnHidden(4, True)
         self.treeWidget.itemDoubleClicked.connect(self.openItemFile)
@@ -343,6 +344,7 @@ class Extractor(QtWidgets.QWidget):
                         infos.append(zipFile.getinfo(file))
                 
                 infoindex = 0
+                itemsToProcess = []
                 for file in files:
                     try:
                         info = infos[infoindex]
@@ -357,24 +359,31 @@ class Extractor(QtWidgets.QWidget):
                                 log(f"[        ] Adding item {path}")
                                 item =  QtWidgets.QTreeWidgetItem()
                                 item.setText(0, path)
-                                item.setText(3, info.filename)
+                                item.setText(5, info.filename) 
                                 if(i+1<len(file)):
                                     item.setText(1, "")
                                     try:
                                         item.setIcon(0, QtGui.QIcon(QtGui.QPixmap(getPath("folder.ico")).scaledToWidth(24, QtCore.Qt.SmoothTransformation)))
+                                        item.setText(6, "folder")
                                     except:
                                         pass
                                 else:
                                     item.setText(1, f"{info.file_size/1000000:.3f} MB")
                                     try:
                                         item.setIcon(0, QtGui.QIcon(getFileIcon(path)))
+                                        item.setText(6, "file")
                                     except:
                                         pass
                                 folders[path] = item
+                                itemsToProcess.append(item)
+                            
+
                         i = 0
                         while i<(len(parentWidgets)-1):
                             parentWidgets[i].addChild(parentWidgets[i+1])
                             i += 1
+
+                        
                     except Exception as e:
                         self.throwError("SomePythonThings Zip Manager", f"Unable to load file {file}\n\nError Details:\n{str(e)}")
                         if(debugging):
@@ -384,6 +393,27 @@ class Extractor(QtWidgets.QWidget):
                 for folder in folders.values():
                     self.treeWidget.addTopLevelItem(folder)
                 self.treeWidget.expandAll()
+                print(itemsToProcess)
+                for item in itemsToProcess:
+                    def changeState(checkbox: QtWidgets.QCheckBox, item: QtWidgets.QTreeWidgetItem, _):
+                        item.setDisabled(not(checkbox.isChecked()))
+                        if(checkbox.isChecked()):
+                            checkbox.setText("Extract")
+                        else:
+                            checkbox.setText("Skip")
+                        for i in range(item.childCount()):
+                            subitem = item.child(i)
+                            subcheckbox = subitem.treeWidget().itemWidget(subitem, 2)
+                            if(subcheckbox):
+                                subitem.setDisabled(not(subcheckbox.isChecked()))
+                                subcheckbox.setChecked(checkbox.isChecked())
+                            else:
+                                log("[  WARN  ] Unable to disable/enable other checkboxes")
+                    checkbox = QtWidgets.QCheckBox()
+                    checkbox.setChecked(True)
+                    checkbox.setText("Extract")
+                    checkbox.stateChanged.connect(partial(changeState, (checkbox), (item)))
+                    item.treeWidget().setItemWidget(item, 2, checkbox)
         except Exception as e:
             self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e))
             if(debugging):
@@ -413,9 +443,20 @@ class Extractor(QtWidgets.QWidget):
                         log("[        ] Creating subdirectory...")
                         directory += "/"+zip.split('/')[-1]+" - Extracted files"
                     log("[  INFO  ] Zip file will be extracted into "+directory)
-                    t = Thread(target=self.heavyExtract, args=(directory, zip))
-                    t.daemon = True
-                    t.start()
+
+                    def analyzeFileList(files: list, item: QtWidgets.QTreeWidgetItem):
+                            if(item.childCount()>0):
+                                for i in range(item.childCount()):
+                                    files = analyzeFileList(files, item.child(i))
+                            else:
+                                files.append(item)
+                            return files
+
+                    files = []
+                    for i in range(self.treeWidget.topLevelItemCount()):
+                        files = analyzeFileList(files, self.treeWidget.topLevelItem(i))
+
+                    Thread(target=self.heavyExtract, args=(directory, zip, files), daemon=True).start()
             except Exception as e:
                 if debugging:
                     raise e
@@ -431,7 +472,7 @@ class Extractor(QtWidgets.QWidget):
         except Exception as e:
             self.errorWhileExtracting = e
 
-    def heavyExtract(self, directory, zip, password=""):
+    def heavyExtract(self, directory, zip, files):
         try:
             error = False
             log('[        ] Extracting zip file on '+str(directory))
@@ -441,33 +482,38 @@ class Extractor(QtWidgets.QWidget):
                 totalFiles += 1
             actualFile = 0
             self.errorWhileExtracting = None
-            if(password!=""):
-                archive.setpassword(bytes(password, 'utf-8'))
-            for file in archive.namelist():
-                try:
-                    self.updateProgressBar[int, int, str].emit(actualFile, totalFiles, file)
-                    t = KillableThread(target=self.pure_extract, args=( archive, file, directory, password))
-                    t.start()
-                    while t.is_alive():
-                        if not(self.isExtracting):
-                            log("[  WARN  ] User canceled the zip extraction!")
-                            self.stopLoadingSignal.emit()
-                            t.shouldBeRuning=False
-                            self.throwWarningSignal.emit("SomePythonThings Zip Manager", "User cancelled the zip extraction")
-                            archive.close()
-                            sys.exit("User killed zip creation process")
-                        else:
-                            time.sleep(0.01)
-                    t.join()
-                    if(self.errorWhileExtracting!=None):
-                        raise self.errorWhileExtracting
-                    log('[   OK   ] File '+file.split('/')[-1]+' extracted successfully')
-                except Exception as e:
-                    log('[  WARN  ] Unable to extract file ' +file.split('/')[-1])
-                    self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Unable to extract file '+file.split('/')[-1]+"\n\nReason:\n"+str(e))
-                    error = True
-                finally:
-                    actualFile += 1
+            #if(password!=""):
+            #    archive.setpassword(bytes(password, 'utf-8'))
+            for file in files:
+        
+                if(file.treeWidget().itemWidget(file, 2).isChecked()):
+                    file = file.text(5)
+                    try:
+                        self.updateProgressBar[int, int, str].emit(actualFile, totalFiles, file)
+                        t = KillableThread(target=self.pure_extract, args=( archive, file, directory))
+                        t.start()
+                        while t.is_alive():
+                            if not(self.isExtracting):
+                                log("[  WARN  ] User canceled the zip extraction!")
+                                self.stopLoadingSignal.emit()
+                                t.shouldBeRuning=False
+                                self.throwWarningSignal.emit("SomePythonThings Zip Manager", "User cancelled the zip extraction")
+                                archive.close()
+                                sys.exit("User killed zip creation process")
+                            else:
+                                time.sleep(0.01)
+                        t.join()
+                        if(self.errorWhileExtracting!=None):
+                            raise self.errorWhileExtracting
+                        log('[   OK   ] File '+file.split('/')[-1]+' extracted successfully')
+                    except Exception as e:
+                        log('[  WARN  ] Unable to extract file ' +file.split('/')[-1])
+                        self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Unable to extract file '+file.split('/')[-1]+"\n\nReason:\n"+str(e))
+                        error = True
+                    finally:
+                        actualFile += 1
+                else:
+                    log(f"[   OK   ] Skipping file {file.text(0)}")
             self.updateProgressBar[int, int].emit(totalFiles, totalFiles)
             notify("Extraction Done!", "SomePythonThings Zip Manager has finished extracting the selected files and folders.", self.window)
             self.stopLoadingSignal.emit()
