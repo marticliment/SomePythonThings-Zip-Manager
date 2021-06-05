@@ -47,7 +47,7 @@ class checkForUpdates(QtWidgets.QProgressDialog):
         self.throwInfoSignal.connect(self.throwInfo)
         self.throwErrorSignal.connect(self.throwError)
         self.dialogSignal.connect(self.setLabelText)
-        self.sysExitSignal.connect(sys.exit)
+        self.sysExitSignal.connect(lambda: self.parent().app.closeAllWindows())
         self.askUpdatesSignal.connect(self.askUpdates)
         self.closeDialogSignal.connect(self.close)
         self.hideDialogSignal.connect(self.hide)
@@ -171,7 +171,6 @@ class checkForUpdates(QtWidgets.QProgressDialog):
             self.dialogSignal.emit('Launching the updater. Please wait')
             subprocess.run('start /B "" "{0}" /silent'.format(filename), shell=True)
             self.sysExitSignal.emit()
-            sys.exit()
         except Exception as e:
             if debugging:
                 raise e
@@ -206,7 +205,6 @@ class checkForUpdates(QtWidgets.QProgressDialog):
             self.dialogSignal.emit('Installing the update. Please wait')
             self.throwInfoSignal.emit("SomePythonThings Zip Manager Updater","The update has been applied succesfully. Please restart the application")
             self.sysExitSignal.emit()
-            sys.exit()
         else:  # If the installation is falied on the 1st time
             if not again:
                 get_updater().call_in_main(self.install_linux_part1, True)
@@ -233,7 +231,7 @@ class checkForUpdates(QtWidgets.QProgressDialog):
         self.dialogSignal.emit('Launching...')
         p2 = os.system(f'open "{file}"')
         log("[  INFO  ] macOS installation unix output code is \"{0}\"".format(p2))
-        sys.exit(0)
+        self.sysExitSignal.emit()
 
 
     def updateProgressBar(self, mode: str) -> None:
