@@ -82,7 +82,14 @@ class Extractor(QtWidgets.QWidget):
         self.subdircheck = CheckBoxAction(self, "Extract on a new folder: ", settings["create_subdir"])
         self.toolBar.addWidget(self.subdircheck)
 
+        self.toolBar.addSeparator()
 
+        self.openFilesAction = QtWidgets.QAction("Open with default application", self)
+        self.openFilesAction.setToolTip("Open with default application")
+        self.openFilesAction.setIcon(QtGui.QIcon(getPath("window.ico")))
+        self.openFilesAction.triggered.connect(self.openItemFile)
+        self.toolBar.addAction(self.openFilesAction)
+        
         self.toolBar.addSeparator()
 
         self.magicAction = QtWidgets.QAction("Compress", self)
@@ -202,7 +209,7 @@ class Extractor(QtWidgets.QWidget):
             log("[        ] Opening file with default app...")
             archive = zipfile.ZipFile(self.zip)
             print(archive.namelist())
-            self.openOSFileDirectly(archive.extract(item.text(3), tempDir.name))
+            self.openOSFileDirectly(archive.extract(item.text(5), tempDir.name))
             archive.close()
     
     def updateProgressBarValue(self, actual: int, total: int, actualFile=""):
@@ -240,6 +247,10 @@ class Extractor(QtWidgets.QWidget):
 
         menu.addAction(self.addFileAction)
         
+        menu.addSeparator()
+
+        menu.addAction(self.openFilesAction)
+
         menu.addSeparator()
 
         menu.addAction(self.magicAction)

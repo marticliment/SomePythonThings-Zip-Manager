@@ -70,8 +70,9 @@ class Compressor(QtWidgets.QWidget):
         self.removeFilesAction.setIcon(QtGui.QIcon(getPath("not.ico")))
         self.removeFilesAction.triggered.connect(self.removeFiles)
         self.toolBar.addAction(self.removeFilesAction)
-        
+
         self.toolBar.addSeparator()
+
 
         self.algorithm = ComboBoxAction(self, "Compression Algorithm: ", ["Deflated", "None", "BZIP2", "LZMA"])
         self.toolBar.addWidget(self.algorithm)
@@ -90,6 +91,14 @@ class Compressor(QtWidgets.QWidget):
         self.rate = SpinBoxAction(self, "Compression rate:", 1, 9, settings["default_level"])
         self.toolBar.addWidget(self.rate)
 
+        self.toolBar.addSeparator()
+
+        self.openFilesAction = QtWidgets.QAction("Open with system application", self)
+        self.openFilesAction.setToolTip("Open with system application")
+        self.openFilesAction.setIcon(QtGui.QIcon(getPath("window.ico")))
+        self.openFilesAction.triggered.connect(self.openItemFile)
+        self.toolBar.addAction(self.openFilesAction)
+        
         self.toolBar.addSeparator()
 
         self.magicAction = QtWidgets.QAction("Compress", self)
@@ -216,6 +225,10 @@ class Compressor(QtWidgets.QWidget):
 
         menu.addAction(self.removeFileAction)
         menu.addAction(self.removeFilesAction)
+
+        menu.addSeparator()
+
+        menu.addAction(self.openFilesAction)
         
         menu.addSeparator()
 
