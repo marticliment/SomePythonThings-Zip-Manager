@@ -1,4 +1,5 @@
 Releases.lnk
+zipmanager/res/__init__.py.lnk
 zipmanager/build/
 zipmanager/dist/
 zipmanager/__pycache__/
