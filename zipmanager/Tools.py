@@ -1,5 +1,5 @@
-debugging = True
-version = 4.0
+debugging = False
+version = 4.1
 
 
 import time, tempfile, os, json, sys, darkdetect, webbrowser
