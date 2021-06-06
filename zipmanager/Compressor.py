@@ -12,6 +12,8 @@ from qt_thread_updater import get_updater
 
 class Compressor(QtWidgets.QWidget):
 
+    setIconSignal = QtCore.Signal(QtWidgets.QTreeWidgetItem, QtGui.QIcon)
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.mainWindow = parent
@@ -72,6 +74,8 @@ class Compressor(QtWidgets.QWidget):
         self.toolBar.addAction(self.removeFilesAction)
 
         self.toolBar.addSeparator()
+
+        self.setIconSignal.connect(lambda item, icon: item.setIcon(0, icon))
 
 
         self.algorithm = ComboBoxAction(self, "Compression Algorithm: ", ["Deflated", "None", "BZIP2", "LZMA"])
@@ -338,6 +342,14 @@ class Compressor(QtWidgets.QWidget):
     
     def getChildFolderName(self, baseDir: str, longerDir: str) -> str:
         return longerDir.replace(baseDir, "")
+    
+    def setIcon(self, item: QtWidgets.QTreeWidgetItem, filename: str) -> None:
+        icon = QtGui.QIcon(getFileIcon(filename))
+        try:
+            log("[   OK   ] Icon loaded successfully")
+            self.setIconSignal.emit(item, icon)
+        except:
+            pass
 
     def addChildFolder(self, folderItem: QtWidgets.QTreeWidgetItem, folderpath: str, rootFolder: str):
         log(f"[   OK   ] Processing {folderpath} child files...")
@@ -355,10 +367,7 @@ class Compressor(QtWidgets.QWidget):
                     item.setText(2, "Pending")
                     item.setText(3, filename)
                     item.setText(4, self.getChildFolderName(rootFolder, folderpath))
-                    try:
-                        item.setIcon(0, QtGui.QIcon(getFileIcon(filename)))
-                    except:
-                        pass
+                    Thread(target=self.setIcon, args=(item, filename)).start()
                     folderItem.addChild(item)
             for folder in folders:
                 folder = folder.replace("\\", "/")
