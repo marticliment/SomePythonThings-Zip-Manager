@@ -401,8 +401,7 @@ class Compressor(QtWidgets.QWidget):
             self.treeWidget.addTopLevelItem(folderItem)
             print(folder, '/'.join(folder.split('/')[:-1]))
             self.addChildFolder(folderItem, folder, '/'.join(folder.split('/')[:-1]))
-            log('[   OK   ] Folder selected. Returning value "'+str(self.files[-1])+'"')
-            return str(folder)
+            log('[   OK   ] Folder selected successfully.')
         except Exception as e:
             if debugging:
                 raise e
