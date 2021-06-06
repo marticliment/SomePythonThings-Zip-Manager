@@ -107,7 +107,7 @@ class Window(QtWidgets.QMainWindow):
         button.setIcon(QtGui.QIcon(getPath("not.ico")))
         i = self.tabWidget.addTab(widget, icon, title)
         if(closable):
-            button.clicked.connect(lambda: self.tabWidget.removeTab(i))
+            button.clicked.connect(lambda: self.tabWidget.removeTab(self.tabWidget.indexOf(widget)))
             self.tabWidget.tabBar().setTabButton(i, QtWidgets.QTabBar.RightSide,  button)
             self.tabWidget.tabBar().setTabButton(i, QtWidgets.QTabBar.LeftSide,  None)
 
