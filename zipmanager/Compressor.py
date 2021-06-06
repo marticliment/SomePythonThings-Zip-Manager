@@ -197,17 +197,14 @@ class Compressor(QtWidgets.QWidget):
     
     def showRightClickMenu(self, pos: QtCore.QPoint) -> None:
         x = 0
-        x += self.mainWindow.pos().x()
-        x += self.mainWindow.pos().x()
+        x += self.treeWidget.pos().x()
+        x += self.window().pos().x()
         x += pos.x()
-        x -= 80
         y = 0
-        y += self.mainWindow.pos().y()
-        y += self.mainWindow.pos().y()
+        y += 90 # Tab widget + menubar
+        y += self.treeWidget.pos().y()
+        y += self.window().pos().y()
         y += pos.y()
-        y += self.treeWidget.header().height()
-        y += self.treeWidget.header().height()
-        y -= 30
         log(f"[        ] Showing menu at {x}x{y}")
         menu = QtWidgets.QMenu(self)
         menu.move(x, y)

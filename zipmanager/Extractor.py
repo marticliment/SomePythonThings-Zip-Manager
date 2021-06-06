@@ -225,20 +225,15 @@ class Extractor(QtWidgets.QWidget):
 
     def showRightClickMenu(self, pos: QtCore.QPoint) -> None:
         x = 0
-        x += self.parent().pos().x()
+        x = 0
         x += self.treeWidget.pos().x()
-        x += self.parent().parent().pos().x()
-        x += self.parent().parent().parent().pos().x()
+        x += self.window.pos().x()
         x += pos.x()
         y = 0
-        y += self.parent().pos().y()
+        y += 90 # Tab widget + menubar
         y += self.treeWidget.pos().y()
-        y += self.parent().parent().pos().y()
-        y += self.parent().parent().parent().pos().y()
+        y += self.window.pos().y()
         y += pos.y()
-        y += self.treeWidget.header().height()
-        y += self.treeWidget.header().height()
-        y += self.treeWidget.header().height()
         log(f"[        ] Showing menu at {x}x{y}")
         menu = QtWidgets.QMenu(self)
         menu.move(x, y)
