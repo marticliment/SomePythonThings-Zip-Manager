@@ -1,4 +1,5 @@
 <h1>SomePythonThings Zip Manager</h1>
+<img src="https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20darwin.yml/badge.svg"><img src="https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20ubuntu.yml/badge.svg"><img src="https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20windows.yml/badge.svg">
 SomePythonThings Zip manager is an application that lets you compress and extract files in a clever way. Not as other compression applications, SomePythonThings Zip Manager has been developed to be useful. SomePythonThings Zip Manager is an open-source application, and it's also 100% free.<br><br>
 <h3>On the <a href="https://github.com/martinet101/SomePythonThings-Zip-Manager/wiki">wiki</a> you'll find all the required information for the installation and how-to-use manuals.</h3><br><br>
 <img src="media/banner.png" style="border-radius:5px;">
