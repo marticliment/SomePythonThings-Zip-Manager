@@ -2,7 +2,7 @@
 
 block_cipher = None
 
-import importlib, os
+import importlib, os, sys
 
 package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss']]]
 
@@ -21,8 +21,8 @@ a = Analysis(['__init__.py'],
              cipher=block_cipher,
              noarchive=False)
 
-a.datas += [('./qtmodern/resources/frameless.qss', f'/mnt/c/Users/marti/AppData/Local/Programs/Python/Python38/Lib/site-packages/qtmodern/resources/frameless.qss', "DATA")]
-a.datas += [('./qtmodern/resources/style.qss', f'/mnt/c/Users/marti/AppData/Local/Programs/Python/Python38/Lib/site-packages/qtmodern/resources/style.qss', "DATA")]
+a.datas += [('./qtmodern/resources/frameless.qss', f'{sys.path[-1]}/qtmodern/resources/frameless.qss', "DATA")]
+a.datas += [('./qtmodern/resources/style.qss', f'{sys.path[-1]}/qtmodern/resources/style.qss', "DATA")]
 
 
 #a.datas += [('.\\qtmodern\\resources\\frameless.qss', f'{os.path.expanduser("~")}\\AppData\\Local\\Programs\\Python\\Python38-32\\Lib\\site-packages\\qtmodern\\resources\\frameless.qss', "DATA")]
