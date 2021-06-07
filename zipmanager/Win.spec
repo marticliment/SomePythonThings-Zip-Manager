@@ -21,12 +21,10 @@ a = Analysis(['__init__.py'],
              cipher=block_cipher,
              noarchive=False)
 
-a.datas += [('.\\qtmodern\\resources\\frameless.qss', f'{os.path.expanduser("~")}\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages\\qtmodern\\resources\\frameless.qss', "DATA")]
-a.datas += [('.\\qtmodern\\resources\\style.qss', f'{os.path.expanduser("~")}\\AppData\\Local\\Programs\\Python\\Python38\\Lib\\site-packages\\qtmodern\\resources\\style.qss', "DATA")]
 
+a.datas += [('./qtmodern/resources/frameless.qss', f'res/qtmodern/frameless.qss', "DATA")]
+a.datas += [('./qtmodern/resources/style.qss', f'res/qtmodern/style.qss', "DATA")]
 
-#a.datas += [('.\\qtmodern\\resources\\frameless.qss', f'{os.path.expanduser("~")}\\AppData\\Local\\Programs\\Python\\Python38-32\\Lib\\site-packages\\qtmodern\\resources\\frameless.qss', "DATA")]
-#a.datas += [('.\\qtmodern\\resources\\style.qss', f'{os.path.expanduser("~")}\\AppData\\Local\\Programs\\Python\\Python38-32\\Lib\\site-packages\\qtmodern\\resources\\style.qss', "DATA")]
 
 pyz = PYZ(a.pure, a.zipped_data,
              cipher=block_cipher)
