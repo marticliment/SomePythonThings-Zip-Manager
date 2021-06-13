@@ -22,8 +22,24 @@ SomePythonThings Zip manager is an application that lets you compress and extrac
  - Updates are easy and fast to install<br>
 <br><br>
 
-<img src="media/banner_compress.png" style="border-radius:5px;">
+<h1>Installation</h1>
+<b>You  can find a detailed installation guide on the <a href="https://github.com/martinet101/SomePythonThings-Zip-Manager/wiki/Installation">Installation Wiki</a></b>
+<h2>Windows (Via winget)</h2>
+Open a cmd or powershell window and run the following command:<br><br>
 
-<br>
+    winget install "SomePythonThings Zip Manager"
+
+     
+<h2>Windows (Classic way)</h2>
+Download and run the .exe file, run it and click on the Install button.
+<h2>macOS</h3>
+Download the .dmg file and drag "SomePythonThings Zip Manager.app" to your applications folder.
+<h2>Ubuntu</h2>
+Download file and install the .deb file as normal.<br>
+<b>You  can find a detailed installation guide on the <a href="https://github.com/martinet101/SomePythonThings-Zip-Manager/wiki/Installation">Installation Wiki</a></b>
+<br><br>
+<h1>Screenshots:</br>
+
+<img src="media/banner_compress.png" style="border-radius:5px;">
 
 <img src="media/banner_extract.png" style="border-radius:5px;">
