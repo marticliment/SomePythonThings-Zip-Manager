@@ -243,7 +243,9 @@ class Compressor(QtWidgets.QWidget):
     def openOSFileDirectly(self, file: str) -> None:
         log(f"[        ] Spawining process to open file {file}")
         if(_platform=="win32"):
-            c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            os.startfile(file)
+            c = 0
+            #c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         elif(_platform=="darwin"):
             c = os.system(f"open \"{file}\"")
             #c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -408,7 +410,6 @@ class Compressor(QtWidgets.QWidget):
             except:
                 pass
             self.treeWidget.addTopLevelItem(folderItem)
-            print(folder, '/'.join(folder.split('/')[:-1]))
             self.addChildFolder(folderItem, folder, '/'.join(folder.split('/')[:-1]))
             log('[   OK   ] Folder selected successfully.')
         except Exception as e:
@@ -615,7 +616,7 @@ class Compressor(QtWidgets.QWidget):
                 filename = self.files[0][0]
             except:
                 filename = files[0].text(0)
-            zipfilename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save the zip file', filename+".zip", ("Compressed File;;(.zip)"))[0]
+            zipfilename = QtWidgets.QFileDialog.getSaveFileName(self, 'Save the zip file', filename+".zip", ("Compressed files (*.zip)"))[0]
             if zipfilename == "":
                 log("[  WARN  ] User aborted dialog")
                 self.stopLoading()

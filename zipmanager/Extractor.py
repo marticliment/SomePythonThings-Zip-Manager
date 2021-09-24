@@ -1,8 +1,8 @@
 
 from PySide2 import QtWidgets, QtGui, QtCore
-from CustomWidgets import TreeWidget, ProgressUpdater, KillableThread, ComboBoxAction, SpinBoxAction, CheckBoxAction
 from functools import partial
 from Tools import *
+from CustomWidgets import TreeWidget, ProgressUpdater, KillableThread, ComboBoxAction, SpinBoxAction, CheckBoxAction
 #from Tools import log, debugging, _platform, getFileIcon, getPath, openOnExplorer, notify, settings, tempDir
 import os, zipfile, time, sys
 from sys import platform as _platform
@@ -15,11 +15,12 @@ class Extractor(QtWidgets.QWidget):
     throwInfoSignal = QtCore.Signal(str, str)
     throwWarningSignal = QtCore.Signal(str, str)
     throwErrorSignal = QtCore.Signal(str, str)
+    showFileSignal = QtCore.Signal(str)
     
     updateProgressBar = QtCore.Signal([int, int], [int, int, str])
     
-    changeItemIcon = QtCore.Signal(QtWidgets.QTreeWidgetItem, int, str)
-    changeItemText = QtCore.Signal(QtWidgets.QTreeWidgetItem, int, str)
+    changeItemIcon = QtCore.Signal(object, int, str)
+    changeItemText = QtCore.Signal(object, int, str)
 
     stopLoadingSignal = QtCore.Signal()
 
@@ -37,6 +38,10 @@ class Extractor(QtWidgets.QWidget):
         self.throwInfoSignal.connect(self.throwInfo)
         self.throwWarningSignal.connect(self.throwWarning)
         self.throwErrorSignal.connect(self.throwError)
+        self.showFileSignal.connect(self.showFile)
+        
+        self.changeItemIcon.connect(lambda a, b, c: self.changeItemIconFun(a, b, c))
+        self.changeItemText.connect(lambda a, b, c: self.changeItemTextFun(a, b, c))
 
         self.updateProgressBar[int, int].connect(self.updateProgressBarValue)
         self.updateProgressBar[int, int, str].connect(self.updateProgressBarValue)
@@ -45,6 +50,15 @@ class Extractor(QtWidgets.QWidget):
 
         if(startFile != ""):
             self.openZip(startFile)
+            
+    def changeItemIconFun(self, item: QtWidgets.QTreeWidgetItem, index: int, icon: str):
+        item.setIcon(index, QtGui.QIcon(QtGui.QPixmap(icon).scaledToHeight(16, QtCore.Qt.SmoothTransformation)))
+            
+    def changeItemTextFun(self, item: QtWidgets.QTreeWidgetItem, index: int, text: str):
+        item.setText(index, text)
+        if(text=="Extracting"):
+            self.treeWidget.scrollToItem(item)
+        item.setToolTip(index, text)
     
     def throwInfo(self, title: str, body: str) -> None:
         try:
@@ -84,19 +98,93 @@ class Extractor(QtWidgets.QWidget):
 
         self.toolBar.addSeparator()
 
-        self.openFilesAction = QtWidgets.QAction("Open with default application", self)
-        self.openFilesAction.setToolTip("Open with default application")
+        self.selectNoneAction = QtWidgets.QAction("Select none", self)
+        self.selectNoneAction.setToolTip("Select none")
+        self.selectNoneAction.setIcon(QtGui.QIcon(getPath("selectnone.png")))
+        self.selectNoneAction.triggered.connect(self.selectNone)
+        self.toolBar.addAction(self.selectNoneAction)
+        
+        self.selectAllAction = QtWidgets.QAction("Select all", self)
+        self.selectAllAction.setToolTip("Select all")
+        self.selectAllAction.setIcon(QtGui.QIcon(getPath("selectall.png")))
+        self.selectAllAction.triggered.connect(self.selectAll)
+        self.toolBar.addAction(self.selectAllAction)
+        
+        self.invertSelectionAction = QtWidgets.QAction("Invert selection", self)
+        self.invertSelectionAction.setToolTip("Invert selection")
+        self.invertSelectionAction.setIcon(QtGui.QIcon(getPath("invertselect.png")))
+        self.invertSelectionAction.triggered.connect(self.invertSelection)
+        self.toolBar.addAction(self.invertSelectionAction)
+        
+        self.toolBar.addSeparator()
+
+        self.openFilesAction = QtWidgets.QAction("Open file without extracting", self)
+        self.openFilesAction.setToolTip("Open file without extracting")
         self.openFilesAction.setIcon(QtGui.QIcon(getPath("window.ico")))
         self.openFilesAction.triggered.connect(self.openItemFile)
         self.toolBar.addAction(self.openFilesAction)
         
         self.toolBar.addSeparator()
-
+        
         self.magicAction = QtWidgets.QAction("Compress", self)
         self.magicAction.setToolTip("Compress")
         self.magicAction.setIcon(QtGui.QIcon(getPath("extractFiles.ico")))
         self.magicAction.triggered.connect(self.magicButtonAction)
         self.toolBar.addAction(self.magicAction)
+            
+    def selectAll(self) -> None:
+        for i in range(self.treeWidget.topLevelItemCount()):
+            item = self.treeWidget.topLevelItem(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(True)
+                self.selectAllSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(True)
+                
+    def selectAllSubChild(self, child: QtWidgets.QTreeWidgetItem) -> None:
+        for i in range(child.childCount()):
+            item = child.child(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(True)
+                self.selectAllSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(True)
+    
+    def selectNone(self) -> None:
+        for i in range(self.treeWidget.topLevelItemCount()):
+            item = self.treeWidget.topLevelItem(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(False)
+                self.selectNoneSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(False)
+                
+    def selectNoneSubChild(self, child: QtWidgets.QTreeWidgetItem) -> None:
+        for i in range(child.childCount()):
+            item = child.child(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(False)
+                self.selectNoneSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(False) 
+    
+    def invertSelection(self) -> None:
+        for i in range(self.treeWidget.topLevelItemCount()):
+            item = self.treeWidget.topLevelItem(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(not(self.treeWidget.itemWidget(item, 2).isChecked()))
+                self.invertSelectionSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setChecked(not(self.treeWidget.itemWidget(item, 2).isChecked()))
+                
+    def invertSelectionSubChild(self, child: QtWidgets.QTreeWidgetItem) -> None:
+        for i in range(child.childCount()):
+            item = child.child(i)
+            if(item.text(1) == ""):
+                self.treeWidget.itemWidget(item, 2).setCheckedWithoutInternalChecking(not(self.treeWidget.itemWidget(item, 2).isChecked()))
+                self.invertSelectionSubChild(item)
+            else:
+                self.treeWidget.itemWidget(item, 2).setChecked(not(self.treeWidget.itemWidget(item, 2).isChecked()))
 
     def setUpWidgets(self) -> None:
 
@@ -106,9 +194,12 @@ class Extractor(QtWidgets.QWidget):
         self.treeWidget.setSortingEnabled(True)
         self.treeWidget.setEmptyText("Select a zip file to start")
         self.treeWidget.connectFileDragEvent(self.openZip)
-        self.treeWidget.setHeaderLabels(["Name", "Size", "Extract or skip"])
-        self.treeWidget.setColumnHidden(3, True)
-        self.treeWidget.setColumnHidden(4, True)
+        self.treeWidget.setHeaderLabels(["Name", "Empty Slot", "Extract or skip", "Real size", "Compressed size", "Status", "Location inside the zip"])
+        self.treeWidget.setColumnWidth(5, 100)
+        self.treeWidget.setColumnWidth(3, 100)
+        self.treeWidget.setColumnWidth(4, 110)
+        self.treeWidget.setColumnWidth(6, 150)
+        self.treeWidget.setColumnHidden(1, True)
         self.treeWidget.itemDoubleClicked.connect(self.openItemFile)
         self.treeWidget.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)  
         self.treeWidget.customContextMenuRequested.connect(self.showRightClickMenu)
@@ -205,12 +296,23 @@ class Extractor(QtWidgets.QWidget):
     
     def openItemFile(self) -> None:
         item = self.treeWidget.currentItem()
-        if(item.text(1)!=""):
+        if(item.text(4)!=""):
             log("[        ] Opening file with default app...")
             archive = zipfile.ZipFile(self.zip)
-            print(archive.namelist())
-            self.openOSFileDirectly(archive.extract(item.text(5), tempDir.name))
-            archive.close()
+            self.currentStatusBar.setRange(0, 0)
+            self.currentStatusBar.setText(f"Reading {item.text(0)}...")
+            self.currentStatusBar.startLoading()
+            Thread(target=self.extractOnlyOneFile, args=(archive, item)).start()
+    
+    def extractOnlyOneFile(self, archive: zipfile.ZipFile, item: QtWidgets.QTreeWidgetItem) -> None:
+        path = archive.extract(item.text(6), tempDir.name)
+        archive.close()
+        
+        self.showFileSignal.emit(path)
+        
+    def showFile(self, path: str) -> None:
+        self.openOSFileDirectly(path)
+        self.currentStatusBar.stopLoading()
     
     def updateProgressBarValue(self, actual: int, total: int, actualFile=""):
         if(actualFile!=""):
@@ -225,6 +327,10 @@ class Extractor(QtWidgets.QWidget):
             except FileNotFoundError:
                 fsize = "0 B"
             self.currentStatusBar.infoLabel.setText(f"Extracting file \"{actualFile}\" ({fsize}, {actual} out of {total})")
+            if(actual!=total):
+                self.setWindowTitle(f"SomePythonThings Zip Manager - Extracting {actual} out of {total}")
+            else:
+                self.setWindowTitle(f"SomePythonThings Zip Manager")
         else:
             self.currentStatusBar.infoLabel.setText("Extracting...")
         self.currentStatusBar.setRange(0, total)
@@ -252,6 +358,12 @@ class Extractor(QtWidgets.QWidget):
         menu.addAction(self.openFilesAction)
 
         menu.addSeparator()
+        
+        menu.addAction(self.selectNoneAction)
+        menu.addAction(self.selectAllAction)
+        menu.addAction(self.invertSelectionAction)
+        
+        menu.addSeparator()
 
         menu.addAction(self.magicAction)
 
@@ -260,7 +372,9 @@ class Extractor(QtWidgets.QWidget):
     def openOSFileDirectly(self, file: str) -> None:
         log(f"[        ] Spawining process to open file {file}")
         if(_platform=="win32"):
-            c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            os.startfile(file)
+            c = 0
+            #c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         elif(_platform=="darwin"):
             c = os.system(f"open \"{file}\"")
             #c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -304,22 +418,33 @@ class Extractor(QtWidgets.QWidget):
                 compSize = 0
 
                 deflate, lzma, bzip2, stored = False, False, False, False
+                
+                files = []
+                folders: dict = {}
+                infos = []
 
-                for element in zipFile.infolist():
-                    compSize += element.compress_size
-                    size += element.file_size
-                    if not(deflate):
-                        if(element.compress_type == zipfile.ZIP_DEFLATED):
-                            deflate = True
-                    if not(lzma):
-                        if(element.compress_type == zipfile.ZIP_LZMA):
-                            lzma = True
-                    if not(bzip2):
-                        if(element.compress_type == zipfile.ZIP_BZIP2):
-                            bzip2 = True
-                    if not(stored):
-                        if(element.compress_type == zipfile.ZIP_STORED):
-                            stored = True
+                for element in zipFile.namelist():
+                    if(element[-1] == "/"): # if isdir
+                        pass
+                    else:
+                        files.append(element.split('/'))
+                        infoelement = zipFile.getinfo(element)
+                        infos.append(infoelement)
+                        
+                        compSize += infoelement.compress_size
+                        size += infoelement.file_size
+                        if not(deflate):
+                            if(infoelement.compress_type == zipfile.ZIP_DEFLATED):
+                                deflate = True
+                        if not(lzma):
+                            if(infoelement.compress_type == zipfile.ZIP_LZMA):
+                                lzma = True
+                        if not(bzip2):
+                            if(infoelement.compress_type == zipfile.ZIP_BZIP2):
+                                bzip2 = True
+                        if not(stored):
+                            if(infoelement.compress_type == zipfile.ZIP_STORED):
+                                stored = True
 
                 zipAlgorithms = ""
                 if(deflate):
@@ -335,61 +460,58 @@ class Extractor(QtWidgets.QWidget):
                 self.zipPath.setText('/'.join(zip.split("/")[:-1]))
                 self.zipSize.setText(f"{compSize/1000000:.2f} MB")
                 self.zipRealSize.setText(f"{size/1000000:.2f} MB")
-                self.zipRate.setText(f"{compSize/size*100:.1f} %")
+                try:
+                    self.zipRate.setText(f"{compSize/size*100:.1f} %")
+                except ZeroDivisionError:
+                    self.zipRate.setText("100%")
                 self.zipAlgorithm.setText(zipAlgorithms)
 
-                files = []
-                folders = {}
-                infos = []
 
-                for file in zipFile.namelist():
-                    if(file[-1] == "/"):
-                        pass
-                    else:
-                        files.append(file.split('/'))
-                        infos.append(zipFile.getinfo(file))
                 
                 infoindex = 0
                 itemsToProcess = []
+                folderIcon = QtGui.QIcon(getFileIcon(os.path.expanduser("~")))
                 for file in files:
                     try:
-                        info = infos[infoindex]
-                        i = 0
+                        info: zipfile.ZipInfo = infos[infoindex]
+                        dirLevel = 0
                         parentWidgets = []
-                        while i<len(file):
-                            path = file[i]
-                            try:
-                                parentWidgets.append(folders[path])
-                                i += 1
-                            except KeyError:
+                        while dirLevel<len(file):
+                            path = file[dirLevel]
+                            idpath = path+f"_lvl{file[:dirLevel]}"
+                            #path = "_".join(file)
+                            if(idpath in folders):
+                                parentWidgets.append(folders[idpath])
+                                dirLevel += 1
+                            else:
                                 log(f"[        ] Adding item {path}")
                                 item =  QtWidgets.QTreeWidgetItem()
                                 item.setText(0, path)
-                                item.setText(5, info.filename) 
-                                if(i+1<len(file)):
-                                    item.setText(1, "")
+                                item.setText(6, "/".join(info.filename.split("/")[:dirLevel+1]))
+                                if(dirLevel+1<len(file)):
+                                    item.setText(3, "")
+                                    item.setText(7, "folder")
                                     try:
-                                        item.setIcon(0, QtGui.QIcon(QtGui.QPixmap(getPath("folder.ico")).scaledToWidth(24, QtCore.Qt.SmoothTransformation)))
-                                        item.setText(6, "folder")
+                                        item.setIcon(0, folderIcon)
                                     except:
                                         pass
                                 else:
-                                    item.setText(1, f"{info.file_size/1000000:.3f} MB")
+                                    item.setText(3, f"{info.file_size/1000000:.3f} MB")
+                                    item.setText(4, f"{info.compress_size/1000000:.3f} MB")
+                                    item.setText(7, "file")
                                     try:
                                         item.setIcon(0, QtGui.QIcon(getFileIcon(path)))
-                                        item.setText(6, "file")
                                     except:
                                         pass
-                                folders[path] = item
+                                folders[idpath] = item
                                 itemsToProcess.append(item)
                             
 
-                        i = 0
-                        while i<(len(parentWidgets)-1):
-                            parentWidgets[i].addChild(parentWidgets[i+1])
-                            i += 1
-
-                        
+                        dirLevel = 0
+                        while dirLevel<(len(parentWidgets)-1):
+                            parentWidgets[dirLevel].addChild(parentWidgets[dirLevel+1])
+                            dirLevel += 1
+                     
                     except Exception as e:
                         self.throwError("SomePythonThings Zip Manager", f"Unable to load file {file}\n\nError Details:\n{str(e)}")
                         if(debugging):
@@ -399,14 +521,13 @@ class Extractor(QtWidgets.QWidget):
                 for folder in folders.values():
                     self.treeWidget.addTopLevelItem(folder)
                 self.treeWidget.expandAll()
-                print(itemsToProcess)
-                for item in itemsToProcess:
-                    def changeState(checkbox: QtWidgets.QCheckBox, item: QtWidgets.QTreeWidgetItem, _):
+                
+                def changeState(checkbox: CheckBoxAction, item: QtWidgets.QTreeWidgetItem, _):
+                    if(checkbox.avoidInternalChecking):
+                        checkbox.avoidInternalChecking = False
                         item.setDisabled(not(checkbox.isChecked()))
-                        if(checkbox.isChecked()):
-                            checkbox.setText("Extract")
-                        else:
-                            checkbox.setText("Skip")
+                    else:
+                        item.setDisabled(not(checkbox.isChecked()))
                         for i in range(item.childCount()):
                             subitem = item.child(i)
                             subcheckbox = subitem.treeWidget().itemWidget(subitem, 2)
@@ -415,17 +536,25 @@ class Extractor(QtWidgets.QWidget):
                                 subcheckbox.setChecked(checkbox.isChecked())
                             else:
                                 log("[  WARN  ] Unable to disable/enable other checkboxes")
-                    checkbox = QtWidgets.QCheckBox()
-                    checkbox.setChecked(True)
-                    checkbox.setText("Extract")
-                    checkbox.stateChanged.connect(partial(changeState, (checkbox), (item)))
+                                    
+                for item in itemsToProcess:
+                    checkbox = CheckBoxAction(checked=True, onState="Extract", offState="Skip")
+                    checkbox.label.setVisible(False)
+                    checkbox.check.stateChanged.connect(partial(changeState, (checkbox), (item)))
                     item.treeWidget().setItemWidget(item, 2, checkbox)
+                    
+                if(self.treeWidget.topLevelItemCount() == 1):
+                    self.subdircheck.setChecked(False)
+                    self.subdircheck.setText("Extract on a new folder (This zip file has a root folder already!): ")
+                else:
+                    self.subdircheck.setChecked(settings["create_subdir"])
+                    self.subdircheck.setText("Extract on a new folder: ")
+                    
+                    
         except Exception as e:
             self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e))
             if(debugging):
                 raise e
-
-
 
     def extractZip(self):
         zip = self.zip
@@ -439,12 +568,11 @@ class Extractor(QtWidgets.QWidget):
                 directory = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select the destination folder where the zip is going to be extracted', os.path.expanduser("~"))
                 if(directory == ''):
                     log("[  WARN  ] User aborted the dialog")
+                    self.stopLoading()
                     return 0
                 log('[   OK   ] zip file selected successfully')
                 directory = str(directory)
                 if not(directory == ''):
-                    
-                    print(directory)
                     if(self.subdircheck.isChecked()):
                         log("[        ] Creating subdirectory...")
                         directory += "/"+zip.split('/')[-1]+" - Extracted files"
@@ -469,8 +597,6 @@ class Extractor(QtWidgets.QWidget):
                 log('[ FAILED ] Error occurred while extracting zip File')
                 self.window.throwError("SomePythonThings Zip Manager", 'Unable to extract the zip\n\nReason:\n'+str(e))
 
-
-
     def pure_extract(self, zipObj, file, directory, passwd=""):
         self.errorWhileExtracting = None
         try:
@@ -484,17 +610,25 @@ class Extractor(QtWidgets.QWidget):
             log('[        ] Extracting zip file on '+str(directory))
             archive = zipfile.ZipFile(zip)
             totalFiles = 0
-            for file in archive.namelist():
-                totalFiles += 1
+            for file in files:
+                if(file.treeWidget().itemWidget(file, 2).isChecked()):
+                    self.changeItemIcon.emit(file, 5, getPath("not.ico"))
+                    self.changeItemText.emit(file, 5, "Queued")
+                    totalFiles += 1
+                else:
+                    pass
+                    self.changeItemIcon.emit(file, 5, getPath("skipped.png"))
+                    self.changeItemText.emit(file, 5, "Not selected")
             actualFile = 0
             self.errorWhileExtracting = None
             #if(password!=""):
             #    archive.setpassword(bytes(password, 'utf-8'))
-            for file in files:
-        
-                if(file.treeWidget().itemWidget(file, 2).isChecked()):
-                    file = file.text(5)
+            for item in files:
+                if(item.treeWidget().itemWidget(item, 2).isChecked()):
+                    file = item.text(6)
                     try:
+                        self.changeItemIcon.emit(item, 5, getPath("loading.ico"))
+                        self.changeItemText.emit(item, 5, "Extracting")
                         self.updateProgressBar[int, int, str].emit(actualFile, totalFiles, file)
                         t = KillableThread(target=self.pure_extract, args=( archive, file, directory))
                         t.start()
@@ -503,6 +637,9 @@ class Extractor(QtWidgets.QWidget):
                                 log("[  WARN  ] User canceled the zip extraction!")
                                 self.stopLoadingSignal.emit()
                                 t.shouldBeRuning=False
+                                for item in files:
+                                    self.changeItemIcon.emit(item, 5, getPath("warn.ico"))
+                                    self.changeItemText.emit(item, 5, "Canceled")
                                 self.throwWarningSignal.emit("SomePythonThings Zip Manager", "User cancelled the zip extraction")
                                 archive.close()
                                 sys.exit("User killed zip creation process")
@@ -512,14 +649,18 @@ class Extractor(QtWidgets.QWidget):
                         if(self.errorWhileExtracting!=None):
                             raise self.errorWhileExtracting
                         log('[   OK   ] File '+file.split('/')[-1]+' extracted successfully')
+                        self.changeItemIcon.emit(item, 5, getPath("ok.ico"))
+                        self.changeItemText.emit(item, 5, "Done")
                     except Exception as e:
+                        self.changeItemIcon.emit(item, 5, getPath("warn.ico"))
+                        self.changeItemText.emit(item, 5, str(e))
                         log('[  WARN  ] Unable to extract file ' +file.split('/')[-1])
                         self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Unable to extract file '+file.split('/')[-1]+"\n\nReason:\n"+str(e))
                         error = True
                     finally:
                         actualFile += 1
                 else:
-                    log(f"[   OK   ] Skipping file {file.text(0)}")
+                    log(f"[   OK   ] Skipping file {item.text(0)}")
             self.updateProgressBar[int, int].emit(totalFiles, totalFiles)
             notify("Extraction Done!", "SomePythonThings Zip Manager has finished extracting the selected files and folders.", self.window)
             self.stopLoadingSignal.emit()

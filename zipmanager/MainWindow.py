@@ -44,17 +44,18 @@ class Window(QtWidgets.QMainWindow):
         self.loadWidgets()
         self.installEventFilter(self)
         log("[   OK   ] Window loaded successfully")
-        log("[        ] Calling updates thread...")
-        checkForUpdates(self)
+        if(settings["autoCheckForUpdates"]):
+            log("[        ] Calling updates thread...")
+            checkForUpdates(self)
 
         if(_platform == "win32"):
-                    from PySide2 import QtWinExtras
-                    self.loadbutton = QtWinExtras.QWinTaskbarButton(self)
-                    self.loadbutton.setWindow(self.windowHandle())
-                    self.taskbprogress = self.loadbutton.progress()
-                    self.taskbprogress.setRange(0, 100)
-                    self.taskbprogress.setValue(0)
-                    self.taskbprogress.hide()
+            from PySide2 import QtWinExtras
+            self.loadbutton = QtWinExtras.QWinTaskbarButton(self)
+            self.loadbutton.setWindow(self.windowHandle())
+            self.taskbprogress = self.loadbutton.progress()
+            self.taskbprogress.setRange(0, 100)
+            self.taskbprogress.setValue(0)
+            self.taskbprogress.hide()
 
     def closeEvent(self, event: QtGui.QCloseEvent) -> None:
         self.themeThread.shouldBeRunning = False
@@ -83,6 +84,7 @@ class Window(QtWidgets.QMainWindow):
             self.app.setStyleSheet("")
             if(_platform=="win32"):
                 self.app.setStyle("windowsvista")
+                self.app.setStyle(QtWidgets.QStyleFactory.create("windowsvista"))
             elif(_platform=="darwin"):
                 self.app.setStyle("macintosh")
             elif(_platform=="linux"):
@@ -193,12 +195,12 @@ class Window(QtWidgets.QMainWindow):
         helpMenu.addAction(aboutQtAction)
         
         aboutAction = QtWidgets.QAction(" About SomePythonThings Zip Manager", self)
-        aboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe iconset has a CC Non-Commercial Atribution 4.0 License"))
+        aboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
         helpMenu.addAction(aboutAction)
 
         if(macOS):
             legacyAboutAction = QtWidgets.QAction("About", self)
-            legacyAboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe iconset has a CC Non-Commercial Atribution 4.0 License"))
+            legacyAboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
             helpMenu.addAction(legacyAboutAction)
 
             
