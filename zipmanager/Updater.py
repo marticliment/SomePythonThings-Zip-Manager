@@ -22,18 +22,22 @@ class checkForUpdates(QtWidgets.QProgressDialog):
     hideDialogSignal = QtCore.Signal()
 
     continueSignal = QtCore.Signal(dict)
+    
+    callInMain = QtCore.Signal(object)
 
     def __init__(self, parent: QtWidgets.QMainWindow = None, force: bool = False, verbose: bool = False) -> str:
         super().__init__(parent)
         self.force = force
         self.verbose = verbose
+        self.callInMain.connect(lambda fun: fun())
         self.setParent(parent)
         self.setAutoFillBackground(True)
         self.setWindowModality(QtCore.Qt.WindowModal)
         self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, True)
         self.setModal(True)
+        self.setVisible(False)
         self.setCancelButton(None)
         self.setSizeGripEnabled(False)
         self.setWindowTitle('Updater')
@@ -71,15 +75,20 @@ class checkForUpdates(QtWidgets.QProgressDialog):
 
     def downloadReleaseFile(self):
         try:
+            if(not(self.verbose)):
+                self.callInMain.emit(self.close)
             response = urlopen("http://www.somepythonthings.tk/versions/zip.ver")
             response = response.read().decode("utf8")
             self.continueSignal.emit(response)
         except Exception as e:
             if(self.verbose):
                 self.throwErrorSignal.emit("Zip Manager Updater", f"Unable to check for updates. Are you connected to the internet?\n\n{str(e)}")
-                self.closeDialogSignal.emit()
+            self.closeDialogSignal.emit()
+            if(debugging):
+                raise e
 
     def checkIfUpdates(self, response: bool):
+        self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
         try:
             if float(response.split("///")[0]) > version:
                 if(_platform=="win32" and int(platform.release())<10):

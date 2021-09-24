@@ -1,8 +1,8 @@
 debugging = False
-version = 4.1
+version = 4.2
 
 
-import time, tempfile, os, json, sys, darkdetect, webbrowser
+import time, tempfile, os, json, sys, darkdetect, webbrowser, subprocess
 from threading import Thread
 from sys import platform as _platform
 from PySide2 import QtWidgets, QtCore, QtGui
@@ -23,6 +23,7 @@ defaultSettings = {
     "default_level": 5,
     "create_subdir": True,
     "mode": "auto",
+    "autoCheckForUpdates": True,
     "plainAppearance": _platform=="darwin"
 }
 settings = defaultSettings.copy()
@@ -91,7 +92,7 @@ def openLog() -> None:
 def openOnExplorer(file: str, force: bool = True) -> None:
     if    (_platform == 'win32'):
         try:
-            os.system('start explorer /select,"{0}"'.format(file.replace("/", "\\")))
+            subprocess.run('start explorer /select,"{0}"'.format(file.replace("/", "\\")), shell=True)
         except:
             log("[  WARN  ] Unable to show file {0} on file explorer.".format(file))
     elif (_platform == 'darwin'):
@@ -129,7 +130,7 @@ class CheckModeThread(QtCore.QThread):
                 lastModeWasLight = darkdetect.isLight()
             time.sleep(0.01)
 
-def saveSettings(silent=True, default_algorithm="Deflated", default_level=5, create_subdir=True, mode="auto", plainAppearance=None) -> bool:
+def saveSettings(silent=True, default_algorithm="Deflated", default_level=5, create_subdir=True, mode="auto", plainAppearance=None, autoCheckForUpdates=True) -> bool:
     if plainAppearance == None:
         plainAppearance = settings["plainAppearance"]
     
@@ -155,6 +156,7 @@ def saveSettings(silent=True, default_algorithm="Deflated", default_level=5, cre
                 "default_level":default_level,
                 "create_subdir":create_subdir,
                 "mode":mode,
+                "autoCheckForUpdates": autoCheckForUpdates,
                 "plainAppearance": plainAppearance,
                 }))
             settingsFile.close()
@@ -210,10 +212,17 @@ try:
 except Exception as e:
     log("[ FAILED ] Unable to read settings! ({0})".format(str(e)))
 
+def winIsLight() -> bool:
+        mode = darkdetect.isLight()
+        if(mode!=None):
+            return mode
+        else:
+            return True
+
 def openSettingsWindow(parent):
     global settings
-    settingsWindow = QtWidgets.QMainWindow(parent)
-    settingsWindow.setFixedSize(400, 300)
+    settingsWindow = QtWidgets.QMainWindow(parent)   
+    settingsWindow.setFixedSize(400, 350)
     settingsWindow.setWindowTitle("SomePythonThings Zip Manager Settings")
     settingsWindow.setWindowFlag(QtCore.Qt.WindowMinimizeButtonHint, False)
     settingsWindow.setWindowModality(QtCore.Qt.ApplicationModal)
@@ -224,7 +233,7 @@ def openSettingsWindow(parent):
         settingsWindow.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         settingsWindow.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
     
-    layout = QtWidgets.QFormLayout()
+    layout = QtWidgets.QVBoxLayout()
 
     settingsWindow.setCentralWidget(QtWidgets.QWidget())
     settingsWindow.centralWidget().setLayout(layout)
@@ -232,34 +241,27 @@ def openSettingsWindow(parent):
 
     themeSettings = QtWidgets.QGroupBox()
     if(_platform=="darwin"):themeSettings.setFixedWidth(345)
-    themeSettings.setTitle("Appearance")
+    themeSettings.setTitle("General")
 
     l = QtWidgets.QFormLayout()
 
     themeSettings.setLayout(l)
-    
-    def changeText(checkbox: QtWidgets.QCheckBox) -> None:
-        nonlocal plainAppearance
-        if(checkbox.isChecked()):
-            checkbox.setText("Enabled")
-            if(checkbox==plainAppearance):
-                modeSelector.setEnabled(False)
-        else:
-            checkbox.setText("Disabled")
-            if(checkbox==plainAppearance):
-                modeSelector.setEnabled(True)
 
     modeSelector = QtWidgets.QComboBox()
 
-    plainAppearance = QtWidgets.QCheckBox()
+    plainAppearance = CheckBoxAction()
     plainAppearance.setChecked(settings["plainAppearance"])
     plainAppearance.setText("")
-    changeText(plainAppearance)
-    plainAppearance.stateChanged.connect(lambda: changeText(plainAppearance))
+    
+    
+    autoUpdate = CheckBoxAction()
+    autoUpdate.setChecked(settings["autoCheckForUpdates"])
+    autoUpdate.setText("")
 
     modeSelector.insertItem(0, 'Light')
     modeSelector.insertItem(1, 'Dark')
     modeSelector.insertItem(2, 'Auto')
+    l.addRow("Check for updates at startup: ", autoUpdate)
     l.addRow("Follow system appearance: ", plainAppearance)
     l.addRow("Application theme: ", modeSelector)
 
@@ -296,19 +298,18 @@ def openSettingsWindow(parent):
     extractionSettings.setLayout(l)
 
 
-    create_subfolder = QtWidgets.QCheckBox()
+    create_subfolder = CheckBoxAction()
     create_subfolder.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
     create_subfolder.setChecked(settings["create_subdir"])
     create_subfolder.setText("Enable/Disable")
-    changeText(create_subfolder)
-    create_subfolder.stateChanged.connect(lambda: changeText(create_subfolder))
     l.addRow("Extract files on new folder: ", create_subfolder)
 
     layout.addWidget(extractionSettings)
+    layout.addStretch()
 
     saveButton = QtWidgets.QPushButton()
     saveButton.setText("Save settings and close")
-    saveButton.clicked.connect(lambda: saveAndCloseSettings(modeSelector, plainAppearance, algorithmSelector, settingsWindow, levelSelector, create_subfolder, parent))
+    saveButton.clicked.connect(lambda: saveAndCloseSettings(modeSelector, plainAppearance, algorithmSelector, settingsWindow, levelSelector, create_subfolder, parent, autoUpdate))
     layout.addWidget(saveButton)
 
     try:
@@ -341,7 +342,7 @@ def openSettingsWindow(parent):
 
     
 
-def saveAndCloseSettings(modeSelector: QtWidgets.QComboBox, plainAppearance: QtWidgets.QCheckBox, algorithmSelector: QtWidgets.QComboBox, settingsWindow, levelSelector: QtWidgets.QComboBox, create_subfolder: QtWidgets.QCheckBox, parent):
+def saveAndCloseSettings(modeSelector: QtWidgets.QComboBox, plainAppearance: QtWidgets.QCheckBox, algorithmSelector: QtWidgets.QComboBox, settingsWindow, levelSelector: QtWidgets.QComboBox, create_subfolder: QtWidgets.QCheckBox, parent, autoUpdate: QtWidgets.QCheckBox):
     global settings, forceClose
     if(algorithmSelector.currentIndex() == 0):
         settings['default_algorithm'] = "Deflated"
@@ -363,16 +364,18 @@ def saveAndCloseSettings(modeSelector: QtWidgets.QComboBox, plainAppearance: QtW
 
     settings["plainAppearance"] = plainAppearance.isChecked()
     
+    settings["autoCheckForUpdates"] = autoUpdate.isChecked()
+    
     parent.loadStyleSheet()
 
     settings["default_level"] = levelSelector.currentIndex()+1
 
     forceClose = True
     settingsWindow.close()
-    saveSettings(silent=True, create_subdir=settings['create_subdir'], default_level=settings['default_level'], default_algorithm=settings['default_algorithm'], mode=settings['mode'])
+    saveSettings(silent=True, create_subdir=settings['create_subdir'], default_level=settings['default_level'], default_algorithm=settings['default_algorithm'], mode=settings['mode'], autoCheckForUpdates=settings["autoCheckForUpdates"])
 
 def openHelp() -> None:
-    webbrowser.open_new("http://www.somepythonthings.tk/programs/somepythonthings-zip-manager/help/")
+    webbrowser.open_new("https://github.com/martinet101/SomePythonThings-Zip-Manager/wiki")
 
 def getExtension(file) -> str:
     if(file.split('.')==1):
@@ -416,6 +419,62 @@ def throwError(*args) -> None:
 
 def confirm(*args) -> QtWidgets.QAbstractButton:
     return app.w.throwInfo(*args)
+
+class CheckBoxAction(QtWidgets.QWidget):
+    def __init__(self, parent=None, text: str = "", checked: bool = False):
+        super().__init__(parent=parent)
+        self.setLayout(QtWidgets.QHBoxLayout(self))
+        if not(settings["plainAppearance"]):
+            if(settings["mode"] == "dark"):
+                isLight = False
+            elif(settings["mode"] == "light"):
+                isLight = True
+            else:
+                isLight = winIsLight()
+            if(isLight):
+                self.setStyleSheet(f"""
+                    QCheckBox::indicator {{width: 12px;height: 12px;}}
+                    QCheckBox::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedBlack.png")});}}
+                    QCheckBox::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndBlack.png")});}}
+                    QCheckBox::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedBlack.png")});}}""")
+            else:
+                self.setStyleSheet(f"""
+                    QCheckBox::indicator {{width: 12px;height: 12px;}}
+                    QCheckBox::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedWhite.png")});}}
+                    QCheckBox::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndWhite.png")});}}
+                    QCheckBox::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedWhite.png")});}}""")
+        self.label = QtWidgets.QLabel(text)
+        self.layout().addWidget(self.label)
+        self.layout().setMargin(1)
+        self.check = QtWidgets.QCheckBox(self)
+        self.layout().addWidget(self.check)
+        self.check.setChecked(checked)
+        self.check.stateChanged.connect(self.changeText)
+        self.changeText()
+    
+    def setText(self, text: str) -> None:
+        self.label.setText(text)
+        
+    def setEnabled(self, enabled: bool) -> None:
+        self.check.setEnabled(enabled)
+        self.changeText()
+    
+    def isChecked(self) -> bool:
+        return self.check.isChecked()
+    
+    def changeText(self) -> None:
+        if(self.check.isChecked()):
+            self.check.setText("Enabled")
+        else:
+            self.check.setText("Disabled")
+            
+    def setChecked(self, value: bool) -> None:
+        return self.check.setChecked(value)
+    
+    def setTristate(self, value: bool) -> None:
+        return self.check.setTristate(value)
+
+
 
 if(__name__ == "__main__"):
     import __init__

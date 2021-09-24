@@ -9,7 +9,7 @@ package_imports = [['qtmodern', ['resources/frameless.qss', 'resources/style.qss
 
 
 a = Analysis(['__init__.py'],
-             pathex=['C:\\Users\\marti\\SPTPrograms\\SomePythonThings-Zip-Manager\\zipmanager'],
+             pathex=['Y:\\SPTPrograms\\SomePythonThings-Zip-Manager\\zipmanager'],
              binaries=[('Compressor.py', '.'), ('Extractor.py', '.'), ('CustomWidgets.py', '.'), ('MainWindow.py', '.'), ('Tools.py', '.'), ('Updater.py', '.'), ('Welcome.py', '.')],
              datas=[('res', 'res')],
              hiddenimports=['pkg_resources.py2_warn', ".Tools.*", "json", "darkdetect", "qtmodern", "qt_thread_updater", "wget", "PySide2.*", "zipfile", "threading", "PySide2"],
