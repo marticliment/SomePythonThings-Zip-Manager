@@ -132,10 +132,7 @@ class checkForUpdates(QtWidgets.QProgressDialog):
     def downloadUpdates(self, links: dict) -> None:
         log('[   OK   ] Reached downloadUpdates. Download links are "{0}"'.format(links))
         if _platform == 'linux' or _platform == 'linux2':  # If the OS is linux
-            log("[   OK   ] platform is linux, starting auto-update...")
-            t = Thread(target=self.download_linux, args=(links,))
-            t.daemon = True
-            t.start()
+            raise NotImplementedError("Linux is not supported anymore")
         elif _platform == 'win32':  # if the OS is windows
             if(int(platform.release())<10):
                 self.throwErrorSignal.emit("Outdated Operating System", "Windows 7, 8 and 8.1 won't be supported on next SomePythonThings Zip Manager versions. Please upgrade to Windows 10 to recieve new updates")
@@ -150,10 +147,7 @@ class checkForUpdates(QtWidgets.QProgressDialog):
                 t.daemon=True
                 t.start()
         elif _platform == 'darwin':
-            log("[   OK   ] platform is macOS, starting auto-update...")
-            t = Thread(target=self.download_macOS, args=(links,))
-            t.daemon=True
-            t.start()
+            raise NotImplementedError("Linux is not supported anymore")
         else:  # If os is unknown
             webbrowser.open_new('https://www.somepythonthings.tk/programs/somepythonthings-zip-manager/')
 
@@ -185,63 +179,6 @@ class checkForUpdates(QtWidgets.QProgressDialog):
                 raise e
             self.throwError("SomePythonThings Zip Manager Updater", "An error occurred while launching the SomePythonTings Zip Manager installer.\n\nError Details:\n{0}".format(str(e)))
             self.closeDialogSignal.emit()
-
-    def download_linux(self, links: dict) -> None:
-        self.dialogSignal.emit('Downloading the update. Please wait...')
-        p1 = os.system('cd; rm somepythonthings-zip-manager_update.deb; wget -O "somepythonthings-zip-manager_update.deb" {0}'.format(links['debian']))
-        if(p1 == 0):  # If the download is done
-            get_updater().call_in_main(self.install_linux_part1)
-        else:  # If the download is falied
-            self.throwErrorSignal.emit("SomePythonThings", "An error occurred while downloading the update. Check your internet connection. If the problem persists, try to download and install the program manually.")
-            webbrowser.open_new('https://www.somepythonthings.tk/programs/somepythonthings-zip-manager/')
-
-    def install_linux_part1(self, again: bool = False) -> None:
-        self.dialogSignal.emit('Installing the update. Please wait')
-        if not again:
-            passwd = str(QtWidgets.QInputDialog.getText(self, "Autentication needed - SomePythonThings Zip Manager", "Please write your password to perform the update. (SomePythonThings Zip Manager needs SUDO access in order to be able to install the update)\n\nPassword:", QtWidgets.QLineEdit.Password, '')[0])
-        else:
-            passwd = str(QtWidgets.QInputDialog.getText(self, "Autentication needed - SomePythonThings Zip Manager", "An error occurred while autenticating. Insert your password again (This attempt will be the last one)\n\nPassword:", QtWidgets.QLineEdit.Password, '')[0])
-        t = Thread(target=self.install_linux_part2, args=(passwd, again))
-        t.start()
-
-    def install_linux_part2(self, passwd: str, again: bool = False) -> None:
-        self.dialogSignal.emit('Installing the update. Please wait')
-        p1 = os.system('cd; echo "{0}" | sudo -S apt install ./"somepythonthings-zip-manager_update.deb" -y'.format(passwd))
-        if(p1 == 0):  # If the installation is done
-            p2 = os.system('cd; rm "./somepythonthings-zip-manager_update.deb"')
-            if(p2 != 0):  # If the downloaded file cannot be removed
-                log("[  WARN  ] Could not delete update file.")
-            self.dialogSignal.emit('Installing the update. Please wait')
-            self.throwInfoSignal.emit("SomePythonThings Zip Manager Updater","The update has been applied succesfully. Please restart the application")
-            self.sysExitSignal.emit()
-        else:  # If the installation is falied on the 1st time
-            if not again:
-                get_updater().call_in_main(self.install_linux_part1, True)
-            else:
-                self.dialogSignal.emit('Stop')
-                self.throwErrorSignal.emit("SomePythonThings Zip Manager Updater", "Unable to apply the update. Please try again later.")
-
-    def download_macOS(self, links: dict) -> None:
-        try:
-            self.dialogSignal.emit('Downloading the update. Please wait...')
-            p1 = os.system('cd; rm somepythonthings-zip-manager_update.dmg')
-            if(p1!=0):
-                log("[  WARN  ] unable to delete somepythonthings-zip-manager_update.dmg")
-            file = wget.download(links['macos'], out=os.path.join(os.path.join(tempDir.name, ".."), "somepythonthings-zip-manager_update.dmg"))
-            get_updater().call_in_main(self.install_macOS, file)
-            log("[   OK   ] Download is done, starting launch process.")
-        except Exception as e:
-            if debugging:
-                raise e
-            self.throwErrorSignal.emit("SomePythonThings Zip Manager Updater", "An error occurred while downloading the update. Check your internet connection. If the problem persists, try to download and install the program manually.\n\nError Details:\n"+str(e))
-            webbrowser.open_new('https://www.somepythonthings.tk/programs/somepythonthings-zip-manager/')
-
-    def install_macOS(self, file: str) -> None:
-        self.dialogSignal.emit('Launching...')
-        p2 = os.system(f'open "{file}"')
-        log("[  INFO  ] macOS installation unix output code is \"{0}\"".format(p2))
-        self.sysExitSignal.emit()
-
 
     def updateProgressBar(self, mode: str) -> None:
         self.dialogSignal.emit(mode)
