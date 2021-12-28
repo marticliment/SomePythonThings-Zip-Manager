@@ -1,8 +1,9 @@
 <h1>SomePythonThings Zip Manager</h1>
 
-[![Build on Windows](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20windows.yml/badge.svg)](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20windows.yml)
-[![Build on macOS](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20darwin.yml/badge.svg)](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20darwin.yml)
-[![Build on Ubuntu](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20ubuntu.yml/badge.svg)](https://github.com/martinet101/SomePythonThings-Zip-Manager/actions/workflows/build%20on%20ubuntu.yml)
+![Downloads@latest](https://img.shields.io/github/downloads/martinet101/SomePythonThings-Zip-Manager/latest/total?style=for-the-badge)
+![Release Version Badge](https://img.shields.io/github/v/release/martinet101/SomePythonThings-Zip-Manager?style=for-the-badge)
+![Issues Badge](https://img.shields.io/github/issues/martinet101/SomePythonThings-Zip-Manager?style=for-the-badge)
+![Closed Issues Badge](https://img.shields.io/github/issues-closed/martinet101/SomePythonThings-Zip-Manager?color=%238256d0&style=for-the-badge)
 
 
 SomePythonThings Zip manager is an application that lets you compress and extract files in a clever way. Not as other compression applications, SomePythonThings Zip Manager has been developed to be useful. SomePythonThings Zip Manager is an open-source application, and it's also 100% free.<br><br>
