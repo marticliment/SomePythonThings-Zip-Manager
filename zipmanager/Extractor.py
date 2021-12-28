@@ -2,7 +2,7 @@
 from PySide2 import QtWidgets, QtGui, QtCore
 from functools import partial
 from Tools import *
-from CustomWidgets import TreeWidget, ProgressUpdater, KillableThread, ComboBoxAction, SpinBoxAction, CheckBoxAction
+from CustomWidgets import TreeWidget, ProgressUpdater, KillableThread, CheckBoxActionForTreeWidget, SpinBoxAction, CheckBoxAction
 #from Tools import log, debugging, _platform, getFileIcon, getPath, openOnExplorer, notify, settings, tempDir
 import os, zipfile, time, sys
 from sys import platform as _platform
@@ -23,6 +23,9 @@ class Extractor(QtWidgets.QWidget):
     changeItemText = QtCore.Signal(object, int, str)
 
     stopLoadingSignal = QtCore.Signal()
+    
+    
+    callInMain = QtCore.Signal(object)
 
 
     def __init__(self, parent=None, startFile: str = ""):
@@ -39,6 +42,7 @@ class Extractor(QtWidgets.QWidget):
         self.throwWarningSignal.connect(self.throwWarning)
         self.throwErrorSignal.connect(self.throwError)
         self.showFileSignal.connect(self.showFile)
+        self.callInMain.connect(lambda f: f())
         
         self.changeItemIcon.connect(lambda a, b, c: self.changeItemIconFun(a, b, c))
         self.changeItemText.connect(lambda a, b, c: self.changeItemTextFun(a, b, c))
@@ -51,8 +55,38 @@ class Extractor(QtWidgets.QWidget):
         if(startFile != ""):
             self.openZip(startFile)
             
+        self.cachedIcons = {}
+        
+        
+        if not(settings["plainAppearance"]):
+            if(settings["mode"] == "dark"):
+                isLight = False
+            elif(settings["mode"] == "light"):
+                isLight = True
+            else:
+                isLight = darkdetect.isLight() if darkdetect.isLight()!=None else True
+            if(isLight):
+                self.setStyleSheet(f"""
+                    #QCheckBoxAction::indicator {{width: 12px;height: 12px;}}
+                    #QCheckBoxAction::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedBlack.png")});}}
+                    #QCheckBoxAction::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndBlack.png")});}}
+                    #QCheckBoxAction::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedBlack.png")});}}
+                    """)
+            else:
+                self.setStyleSheet(f"""
+                    #QCheckBoxAction::indicator {{width: 12px;height: 12px;}}
+                    #QCheckBoxAction::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedWhite.png")});}}
+                    #QCheckBoxAction::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndWhite.png")});}}
+                    #QCheckBoxAction::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedWhite.png")});}}
+                    """)
+            
     def changeItemIconFun(self, item: QtWidgets.QTreeWidgetItem, index: int, icon: str):
-        item.setIcon(index, QtGui.QIcon(QtGui.QPixmap(icon).scaledToHeight(16, QtCore.Qt.SmoothTransformation)))
+        if icon in self.cachedIcons:
+            item.setIcon(index, self.cachedIcons[icon])
+        else:
+            icn = QtGui.QIcon(QtGui.QPixmap(icon).scaledToHeight(16, QtCore.Qt.SmoothTransformation))
+            self.cachedIcons[icon] = icn
+            item.setIcon(index, icn)
             
     def changeItemTextFun(self, item: QtWidgets.QTreeWidgetItem, index: int, text: str):
         item.setText(index, text)
@@ -405,156 +439,176 @@ class Extractor(QtWidgets.QWidget):
             log('[        ] Closing file')
             file.close()
             log('[   OK   ] File Closed.')
+            
             if not zipfile.is_zipfile(supposedZip):
                 self.throwError("Error", f"The file {supposedZip} is not a valid zip file!")
                 return
             else:
-                self.treeWidget.clear()
-                zip = supposedZip.replace("\\", "/")
-                self.zip = zip
-                zipFile = zipfile.ZipFile(zip)
-
-                size = 0
-                compSize = 0
-
-                deflate, lzma, bzip2, stored = False, False, False, False
-                
-                files = []
-                folders: dict = {}
-                infos = []
-
-                for element in zipFile.namelist():
-                    if(element[-1] == "/"): # if isdir
-                        pass
-                    else:
-                        files.append(element.split('/'))
-                        infoelement = zipFile.getinfo(element)
-                        infos.append(infoelement)
-                        
-                        compSize += infoelement.compress_size
-                        size += infoelement.file_size
-                        if not(deflate):
-                            if(infoelement.compress_type == zipfile.ZIP_DEFLATED):
-                                deflate = True
-                        if not(lzma):
-                            if(infoelement.compress_type == zipfile.ZIP_LZMA):
-                                lzma = True
-                        if not(bzip2):
-                            if(infoelement.compress_type == zipfile.ZIP_BZIP2):
-                                bzip2 = True
-                        if not(stored):
-                            if(infoelement.compress_type == zipfile.ZIP_STORED):
-                                stored = True
-
-                zipAlgorithms = ""
-                if(deflate):
-                    zipAlgorithms += "Deflated; "
-                if(lzma):
-                    zipAlgorithms += "LZMA; "
-                if(bzip2):
-                    zipAlgorithms += "BZIP2; "
-                if(stored):
-                    zipAlgorithms += "Stored; "
-
-                self.zipName.setText(zip.split("/")[-1])
-                self.zipPath.setText('/'.join(zip.split("/")[:-1]))
-                self.zipSize.setText(f"{compSize/1000000:.2f} MB")
-                self.zipRealSize.setText(f"{size/1000000:.2f} MB")
-                try:
-                    self.zipRate.setText(f"{compSize/size*100:.1f} %")
-                except ZeroDivisionError:
-                    self.zipRate.setText("100%")
-                self.zipAlgorithm.setText(zipAlgorithms)
-
-
-                
-                infoindex = 0
-                itemsToProcess = []
-                folderIcon = QtGui.QIcon(getFileIcon(os.path.expanduser("~")))
-                for file in files:
-                    try:
-                        info: zipfile.ZipInfo = infos[infoindex]
-                        dirLevel = 0
-                        parentWidgets = []
-                        while dirLevel<len(file):
-                            path = file[dirLevel]
-                            idpath = path+f"_lvl{file[:dirLevel]}"
-                            #path = "_".join(file)
-                            if(idpath in folders):
-                                parentWidgets.append(folders[idpath])
-                                dirLevel += 1
-                            else:
-                                log(f"[        ] Adding item {path}")
-                                item =  QtWidgets.QTreeWidgetItem()
-                                item.setText(0, path)
-                                item.setText(6, "/".join(info.filename.split("/")[:dirLevel+1]))
-                                if(dirLevel+1<len(file)):
-                                    item.setText(3, "")
-                                    item.setText(7, "folder")
-                                    try:
-                                        item.setIcon(0, folderIcon)
-                                    except:
-                                        pass
-                                else:
-                                    item.setText(3, f"{info.file_size/1000000:.3f} MB")
-                                    item.setText(4, f"{info.compress_size/1000000:.3f} MB")
-                                    item.setText(7, "file")
-                                    try:
-                                        item.setIcon(0, QtGui.QIcon(getFileIcon(path)))
-                                    except:
-                                        pass
-                                folders[idpath] = item
-                                itemsToProcess.append(item)
-                            
-
-                        dirLevel = 0
-                        while dirLevel<(len(parentWidgets)-1):
-                            parentWidgets[dirLevel].addChild(parentWidgets[dirLevel+1])
-                            dirLevel += 1
-                     
-                    except Exception as e:
-                        self.throwError("SomePythonThings Zip Manager", f"Unable to load file {file}\n\nError Details:\n{str(e)}")
-                        if(debugging):
-                            raise e
-                    infoindex += 1
-
-                for folder in folders.values():
-                    self.treeWidget.addTopLevelItem(folder)
-                self.treeWidget.expandAll()
-                
-                def changeState(checkbox: CheckBoxAction, item: QtWidgets.QTreeWidgetItem, _):
-                    if(checkbox.avoidInternalChecking):
-                        checkbox.avoidInternalChecking = False
-                        item.setDisabled(not(checkbox.isChecked()))
-                    else:
-                        item.setDisabled(not(checkbox.isChecked()))
-                        for i in range(item.childCount()):
-                            subitem = item.child(i)
-                            subcheckbox = subitem.treeWidget().itemWidget(subitem, 2)
-                            if(subcheckbox):
-                                subitem.setDisabled(not(subcheckbox.isChecked()))
-                                subcheckbox.setChecked(checkbox.isChecked())
-                            else:
-                                log("[  WARN  ] Unable to disable/enable other checkboxes")
-                                    
-                for item in itemsToProcess:
-                    checkbox = CheckBoxAction(checked=True, onState="Extract", offState="Skip")
-                    checkbox.label.setVisible(False)
-                    checkbox.check.stateChanged.connect(partial(changeState, (checkbox), (item)))
-                    item.treeWidget().setItemWidget(item, 2, checkbox)
-                    
-                if(self.treeWidget.topLevelItemCount() == 1):
-                    self.subdircheck.setChecked(False)
-                    self.subdircheck.setText("Extract on a new folder (This zip file has a root folder already!): ")
-                else:
-                    self.subdircheck.setChecked(settings["create_subdir"])
-                    self.subdircheck.setText("Extract on a new folder: ")
-                    
-                    
+                self.loadZipAsync(supposedZip)
         except Exception as e:
-            self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e))
+            if debugging:
+                raise e
+                
+    def loadZipAsync(self, supposedZip):
+        try:
+            callInMain = self.callInMain
+            
+            callInMain.emit(lambda: self.startLoading())
+            callInMain.emit(lambda: self.treeWidget.clear())
+            zip = supposedZip.replace("\\", "/")
+            self.zip = zip
+            zipFile = zipfile.ZipFile(zip)
+
+            size = 0
+            compSize = 0
+
+            deflate, lzma, bzip2, stored = False, False, False, False
+            
+            files = []
+            folders: dict = {}
+            infos = []
+
+            for element in zipFile.namelist():
+                if(element[-1] == "/"): # if isdir
+                    pass
+                else:
+                    files.append(element.split('/'))
+                    infoelement = zipFile.getinfo(element)
+                    infos.append(infoelement)
+                    
+                    compSize += infoelement.compress_size
+                    size += infoelement.file_size
+                    if not(deflate):
+                        if(infoelement.compress_type == zipfile.ZIP_DEFLATED):
+                            deflate = True
+                    if not(lzma):
+                        if(infoelement.compress_type == zipfile.ZIP_LZMA):
+                            lzma = True
+                    if not(bzip2):
+                        if(infoelement.compress_type == zipfile.ZIP_BZIP2):
+                            bzip2 = True
+                    if not(stored):
+                        if(infoelement.compress_type == zipfile.ZIP_STORED):
+                            stored = True
+
+            zipAlgorithms = ""
+            if(deflate):
+                zipAlgorithms += "Deflated; "
+            if(lzma):
+                zipAlgorithms += "LZMA; "
+            if(bzip2):
+                zipAlgorithms += "BZIP2; "
+            if(stored):
+                zipAlgorithms += "Stored; "
+
+            callInMain.emit(lambda: self.zipName.setText(zip.split("/")[-1]))
+            callInMain.emit(lambda: self.zipPath.setText('/'.join(zip.split("/")[:-1])))
+            callInMain.emit(lambda: self.zipSize.setText(f"{compSize/1000000:.2f} MB"))
+            callInMain.emit(lambda: self.zipRealSize.setText(f"{size/1000000:.2f} MB"))
+            try:
+                callInMain.emit(lambda: self.zipRate.setText(f"{compSize/size*100:.1f} %"))
+            except ZeroDivisionError:
+                callInMain.emit(lambda: self.zipRate.setText("100%"))
+            callInMain.emit(lambda: self.zipAlgorithm.setText(zipAlgorithms))
+
+            
+            
+            infoindex = 0
+            itemsToProcess = []
+            folderIcon = QtGui.QIcon(getFileIcon(os.path.expanduser("~")))
+            
+            def newItem(path, info, dirLevel, file):
+                item =  QtWidgets.QTreeWidgetItem()
+                item.setText(0, path)
+                item.setText(6, "/".join(info.filename.split("/")[:dirLevel+1]))
+                if(dirLevel+1<len(file)):
+                    item.setText(3, "")
+                    item.setText(7, "folder")
+                    try:
+                        item.setIcon(0, folderIcon)
+                    except:
+                        pass
+                else:
+                    item.setText(3, f"{info.file_size/1000000:.3f} MB")
+                    item.setText(4, f"{info.compress_size/1000000:.3f} MB")
+                    item.setText(7, "file")
+                    try:
+                        item.setIcon(0, QtGui.QIcon(getFileIcon(path)))
+                    except:
+                        pass
+                folders[idpath] = item
+                itemsToProcess.append(item)
+                
+            for file in files:
+                try:
+                    info: zipfile.ZipInfo = infos[infoindex]
+                    dirLevel = 0
+                    parentWidgets = []
+                    while dirLevel<len(file):
+                        path = file[dirLevel]
+                        idpath = path+f"_lvl{file[:dirLevel]}"
+                        if(idpath in folders):
+                            parentWidgets.append(folders[idpath])
+                            dirLevel += 1
+                        else:
+                            log(f"[        ] Adding item {path}")
+                            
+                            callInMain.emit(lambda: newItem(path, info, dirLevel, file))
+                        
+
+                    dirLevel = 0
+                    while dirLevel<(len(parentWidgets)-1):
+                        parentWidgets[dirLevel].addChild(parentWidgets[dirLevel+1])
+                        dirLevel += 1
+                    
+                except Exception as e:
+                    callInMain.emit(lambda: self.throwError("SomePythonThings Zip Manager", f"Unable to load file {file}\n\nError Details:\n{str(e)}"))
+                    if(debugging):
+                        raise e
+                infoindex += 1
+
+            for folder in folders.values():
+                callInMain.emit(lambda: self.treeWidget.addTopLevelItem(folder))
+            callInMain.emit(lambda: self.treeWidget.expandAll())
+            
+            def changeState(checkbox: CheckBoxAction, item: QtWidgets.QTreeWidgetItem):
+                if(checkbox.avoidInternalChecking):
+                    checkbox.avoidInternalChecking = False
+                    item.setDisabled(not(checkbox.isChecked()))
+                else:
+                    item.setDisabled(not(checkbox.isChecked()))
+                    for i in range(item.childCount()):
+                        subitem = item.child(i)
+                        subcheckbox = subitem.treeWidget().itemWidget(subitem, 2)
+                        if(subcheckbox):
+                            subitem.setDisabled(not(subcheckbox.isChecked()))
+                            subcheckbox.setChecked(checkbox.isChecked())
+                        else:
+                            log("[  WARN  ] Unable to disable/enable other checkboxes")
+                        
+                        
+                        
+            def addCheckbox(item):
+                checkbox = CheckBoxActionForTreeWidget(checked=True, onState="Extract", offState="Skip")
+                checkbox.check.stateChanged.connect(lambda: changeState(checkbox, item))
+                item.treeWidget().setItemWidget(item, 2, checkbox)     
+                        
+            for item in itemsToProcess:
+                callInMain.emit(lambda: addCheckbox(item))
+                
+            if(self.treeWidget.topLevelItemCount() == 1):
+                callInMain.emit(lambda: self.subdircheck.setChecked(False))
+                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder (This zip file has a root folder already!): "))
+            else:
+                callInMain.emit(lambda: self.subdircheck.setChecked(settings["create_subdir"]))
+                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder: "))
+            callInMain.emit(lambda: self.stopLoading())
+        except Exception as e:
+            callInMain.emit(lambda: self.stopLoading())
+            callInMain.emit(lambda: self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e)))
             if(debugging):
                 raise e
+            
 
     def extractZip(self):
         zip = self.zip

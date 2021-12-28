@@ -217,31 +217,13 @@ class CheckBoxAction(QWidget):
         self.offState = offState
         self.setLayout(QtWidgets.QHBoxLayout(self))
         self.avoidInternalChecking = False
-        if not(settings["plainAppearance"]):
-            if(settings["mode"] == "dark"):
-                isLight = False
-            elif(settings["mode"] == "light"):
-                isLight = True
-            else:
-                isLight = self.winIsLight()
-            if(isLight):
-                self.setStyleSheet(f"""
-                    QCheckBox::indicator {{width: 12px;height: 12px;}}
-                    QCheckBox::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedBlack.png")});}}
-                    QCheckBox::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndBlack.png")});}}
-                    QCheckBox::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedBlack.png")});}}""")
-            else:
-                self.setStyleSheet(f"""
-                    QCheckBox::indicator {{width: 12px;height: 12px;}}
-                    QCheckBox::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedWhite.png")});}}
-                    QCheckBox::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndWhite.png")});}}
-                    QCheckBox::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedWhite.png")});}}""")
         self.label = QLabel(text)
         self.layout().addWidget(self.label)
         self.layout().setMargin(1)
         self.check = QCheckBox(self)
         self.layout().addWidget(self.check)
         self.check.setChecked(checked)
+        self.check.setObjectName("QCheckBoxAction")
         self.check.stateChanged.connect(self.changeText)
         self.changeText()
         
@@ -254,6 +236,48 @@ class CheckBoxAction(QWidget):
     
     def setText(self, text: str) -> None:
         self.label.setText(text)
+        
+    def setEnabled(self, enabled: bool) -> None:
+        self.check.setEnabled(enabled)
+        self.changeText()
+    
+    def isChecked(self) -> bool:
+        return self.check.isChecked()
+    
+    def setCheckedWithoutInternalChecking(self, value: bool) -> None:
+        self.avoidInternalChecking = True
+        return self.check.setChecked(value)
+    
+    def setChecked(self, value: bool) -> None:
+        return self.check.setChecked(value)
+    
+    def changeText(self) -> None:
+        if(self.check.isChecked()):
+            self.check.setText(self.onState)
+        else:
+            self.check.setText(self.offState)
+
+class CheckBoxActionForTreeWidget(QWidget):
+    def __init__(self, parent=None, text: str = "", checked: bool = False, onState: str = "Enabled", offState: str = "Disabled"):
+        super().__init__(parent=parent)
+        self.onState = onState
+        self.offState = offState
+        self.setLayout(QtWidgets.QHBoxLayout(self))
+        self.avoidInternalChecking = False
+        self.check = QCheckBox(self)
+        self.layout().addWidget(self.check)
+        self.check.setChecked(checked)
+        self.check.setObjectName("QCheckBoxAction")
+        self.check.stateChanged.connect(self.changeText)
+        self.changeText()
+        
+    def winIsLight(self) -> bool:
+        mode = darkdetect.isLight()
+        if(mode!=None):
+            return mode
+        else:
+            return True
+
         
     def setEnabled(self, enabled: bool) -> None:
         self.check.setEnabled(enabled)

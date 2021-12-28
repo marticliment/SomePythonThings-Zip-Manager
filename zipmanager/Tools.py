@@ -384,12 +384,17 @@ def getExtension(file) -> str:
         return (file.split('.'))[-1]
 
 
+cachedIcons = {}
+
 def getFileIcon(file) -> QtGui.QIcon:
     ext = getExtension(file).lower()
     if(ext[-1]=="/"):
-        return QtGui.QIcon(getPath("folder.ico"))
-    icon = QtGui.QIcon(QtWidgets.QFileIconProvider().icon(QtCore.QFileInfo(file)).pixmap(48, 48).scaledToHeight(24, QtCore.Qt.SmoothTransformation))
-    if not(QtGui.QIcon.isNull(icon)):
+        ext = "folder"
+    if ext in cachedIcons:
+        return cachedIcons[ext]
+    else:
+        icon = QtGui.QIcon(QtWidgets.QFileIconProvider().icon(QtCore.QFileInfo(file)).pixmap(48, 48).scaledToHeight(24, QtCore.Qt.SmoothTransformation))
+        cachedIcons[ext] = icon
         return icon
 
 def showWindow(window: QtWidgets.QMainWindow) -> None:
