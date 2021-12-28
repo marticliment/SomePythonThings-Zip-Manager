@@ -1,5 +1,5 @@
 debugging = False
-version = 4.2
+version = 4.3
 
 
 import time, tempfile, os, json, sys, darkdetect, webbrowser, subprocess
@@ -7,6 +7,7 @@ from threading import Thread
 from sys import platform as _platform
 from PySide2 import QtWidgets, QtCore, QtGui
 from ast import literal_eval
+import winreg
 
 if(len(sys.argv)>1):
     zip = sys.argv[1]
@@ -42,23 +43,42 @@ baseStyleSheet = """
 QLabel QPushButton QTreeView{font-size: 11px;}
 """
 
-if(_platform=="darwin"):
-    baseStyleSheet += """QTabBar::tab {
-        padding: 5px;
-        }
-        QTabBar::tab:hover{background-color: #0E7AFE;
-        }
-        QTabBar::tab:selected{background-color: #0E7AFE;
-        }
-        QTabBar:tab:first{border-top-left-radius: 5px;border-bottom-left-radius: 5px;}
-        QTabBar:tab:last{border-top-right-radius: 5px;border-bottom-right-radius: 5px;}
-        QTabBar:tab:only-one{border-radius: 5px;}
-        """
+def readRegedit(aKey, sKey, default, storage=winreg.HKEY_CURRENT_USER):
+    registry = winreg.ConnectRegistry(None, storage)
+    reg_keypath = aKey
+    try:
+        reg_key = winreg.OpenKey(registry, reg_keypath)
+    except FileNotFoundError as e:
+        return default
+    except Exception as e:
+        print(e)
+        return default
+
+    for i in range(1024):
+        try:
+            value_name, value, _ = winreg.EnumValue(reg_key, i)
+            if value_name == sKey:
+                return value
+        except OSError as e:
+            return default
+        except Exception as e:
+            print(e)
+            return default
 
 def setMainApp(newApp: QtWidgets.QApplication):
     global app
     app = newApp
 
+def getColors() -> list:
+    colors = ['215,226,228', '160,174,183', '101,116,134', '81,92,107', '69,78,94', '41,47,64', '15,18,36', '239,105,80']
+    string = readRegedit(r"Software\Microsoft\Windows\CurrentVersion\Explorer\Accent", "AccentPalette", b'\xe9\xd8\xf1\x00\xcb\xb7\xde\x00\x96}\xbd\x00\x82g\xb0\x00gN\x97\x00H4s\x00#\x13K\x00\x88\x17\x98\x00')
+    i = 0
+    j = 0
+    while (i+2)<len(string):
+        colors[j] = f"{string[i]},{string[i+1]},{string[i+2]}"
+        j += 1
+        i += 4
+    return colors
 
 def log(s: str, force: bool = False) -> None:
     global debugging

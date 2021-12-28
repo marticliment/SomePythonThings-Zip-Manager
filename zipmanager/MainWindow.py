@@ -21,6 +21,7 @@ class Window(QtWidgets.QMainWindow):
 
         self.setUnifiedTitleAndToolBarOnMac(True)
 
+        self.setObjectName("background")
 
         self.app = app
         self.isCompressing = False
@@ -65,6 +66,8 @@ class Window(QtWidgets.QMainWindow):
         time.sleep(1)
         return event.accept()
         
+    def getPx(self, i: int):
+        return i
         
 
     def loadStyleSheet(self) -> None:
@@ -79,17 +82,254 @@ class Window(QtWidgets.QMainWindow):
                 qtmodern.styles.light(self.app)
             else:
                 qtmodern.styles.dark(self.app)
+                colors = getColors()
+                self.app.setStyleSheet(f"""
+                                * {{
+                                    background-color: #262626;
+                                    font-family: "Segoe UI Variable Display Semib";
+                                }}
+                                QGroupBox {{
+                                    border: none;
+                                    padding: 3px;
+                                    background-color: #303030;
+                                    border-radius: 5px;
+                                }}
+                                QLabel,QWidget {{
+                                    background-color: transparent;
+                                }}
+                                #background {{
+                                    background-color: #262626;
+                                }}
+                                QToolTip {{
+                                    border: {self.getPx(1)}px solid #222222;
+                                    padding: {self.getPx(4)}px;
+                                    border-radius: {self.getPx(6)}px;
+                                    background-color: #262626;
+                                }}
+                                QMenu {{
+                                    border: {self.getPx(1)}px solid rgb(60, 60, 60);
+                                    padding: {self.getPx(2)}px;
+                                    outline: 0px;
+                                    color: white;
+                                    background: #262626;
+                                    border-radius: {self.getPx(8)}px;
+                                }}
+                                QMenu::separator {{
+                                    margin: {self.getPx(2)}px;
+                                    height: {self.getPx(1)}px;
+                                    background: rgb(60, 60, 60);
+                                }}
+                                QMenu::icon{{
+                                    padding-left: {self.getPx(10)}px;
+                                }}
+                                QMenu::item{{
+                                    height: {self.getPx(30)}px;
+                                    border: none;
+                                    background: transparent;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
+                                    margin: {self.getPx(2)}px;
+                                }}
+                                QMenu::item:selected{{
+                                    background: rgba(255, 255, 255, 10%);
+                                    height: {self.getPx(30)}px;
+                                    outline: none;
+                                    border: none;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
+                                }}  
+                                QMenu::item:selected:disabled{{
+                                    background: transparent;
+                                    height: {self.getPx(30)}px;
+                                    outline: none;
+                                    border: none;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
+                                }}
+                                QColorDialog {{
+                                    background-color: transparent;
+                                    border: none;
+                                }}
+                                QLineEdit {{
+                                    background-color: #1d1d1d;
+                                    padding: 5px;
+                                    border-radius: {self.getPx(6)}px;
+                                    border: 1px solid #262626;
+                                }}
+                                QScrollArea {{
+                                   color: white;
+                                   background-color: #212121;
+                                }}
+                                QLabel {{
+                                    font-family: "Segoe UI Variable Display Semib";
+                                    font-weight: medium;
+                                }}
+                                * {{
+                                   color: #dddddd;
+                                   font-size: 8pt;
+                                }}
+                                QPlainTextEdit{{
+                                    font-family: "Cascadia Mono";
+                                    background-color: #212121;
+                                    selection-background-color: rgb({colors[4]});
+                                    border: none;
+                                }}
+                                QSpinBox {{
+                                   background-color: #363636;
+                                   border-radius: {self.getPx(6)}px;
+                                   border: {self.getPx(1)}px solid #393939;
+                                   height: {self.getPx(25)}px;
+                                   border-top: {self.getPx(1)}px solid #404040;
+                                }}
+                                QPushButton {{
+                                   width: 100px;
+                                   background-color: #363636;
+                                   border-radius: {self.getPx(6)}px;
+                                   border: {self.getPx(1)}px solid #393939;
+                                   height: {self.getPx(25)}px;
+                                   border-top: {self.getPx(1)}px solid #404040;
+                                }}
+                                QPushButton:hover {{
+                                   background-color: #393939;
+                                   border-radius: {self.getPx(6)}px;
+                                   border: {self.getPx(1)}px solid #414141;
+                                   height: {self.getPx(25)}px;
+                                   border-top: {self.getPx(1)}px solid #454545;
+                                }}
+                                QSCrollArea, QVBoxLayout{{
+                                    border: none;
+                                    margin: none;
+                                    padding: none;
+                                    outline: none;
+                                }}
+                                QScrollBar:vertical {{
+                                    background: #303030;
+                                    margin: {self.getPx(4)}px;
+                                    width: {self.getPx(20)}px;
+                                    border: none;
+                                    border-radius: {self.getPx(5)}px;
+                                }}
+                                QScrollBar:horizontal {{
+                                    background: #303030;
+                                    margin: {self.getPx(4)}px;
+                                    height: {self.getPx(20)}px;
+                                    border: none;
+                                    border-radius: {self.getPx(5)}px;
+                                }}
+                                QScrollBar::handle {{
+                                    margin: {self.getPx(3)}px;
+                                    min-height: 20px;
+                                    min-width: 20px;
+                                    border-radius: {self.getPx(3)}px;
+                                    background: #505050;
+                                }}
+                                QScrollBar::handle:hover {{
+                                    margin: {self.getPx(3)}px;
+                                    border-radius: {self.getPx(3)}px;
+                                    background: #808080;
+                                }}
+                                QScrollBar::add-line {{
+                                    height: 0;
+                                    subcontrol-position: bottom;
+                                    subcontrol-origin: margin;
+                                }}
+                                QScrollBar::sub-line {{
+                                    height: 0;
+                                    subcontrol-position: top;
+                                    subcontrol-origin: margin;
+                                }}
+                                QScrollBar::up-arrow, QScrollBar::down-arrow {{
+                                    background: none;
+                                }}
+                                QScrollBar::add-page, QScrollBar::sub-page {{
+                                    background: none;
+                                }}
+                                #AccentButton{{
+                                    background-color: rgb({colors[3]});
+                                    border-color: rgb({colors[2]});
+                                    border-top-color: rgb({colors[1]});
+                                }}
+                                #AccentButton:hover{{
+                                    background-color: rgb({colors[2]});
+                                    border-color: rgb({colors[1]});
+                                    border-top-color: rgb({colors[1]});
+                                }}
+                                QTabWidget::pane {{
+                                    margin: 5px;
+                                    padding: 3px;
+                                    margin-top: 0px;
+                                    background-color: #2e2e2e;
+                                    border-radius: {self.getPx(6)}px;
+                                    border: {self.getPx(1)}px solid #393939;
+                                    border-top: {self.getPx(1)}px solid #404040;
+                                }}
+                                QTabBar::tab {{
+                                    margin: 5px;
+                                    padding: 3px;
+                                    width: 200px;
+                                    background-color: #363636;
+                                    border-radius: {self.getPx(6)}px;
+                                    border: {self.getPx(1)}px solid #393939;
+                                    height: {self.getPx(25)}px;
+                                    border-top: {self.getPx(1)}px solid #404040;
+                                }}
+                                QTabBar::tab:hover {{
+                                    background-color: #393939;
+                                    border-radius: {self.getPx(6)}px;
+                                    border: {self.getPx(1)}px solid #414141;
+                                    height: {self.getPx(25)}px;
+                                    border-top: {self.getPx(1)}px solid #454545;
+                                }}
+                                QTabBar::tab:selected {{
+                                    margin: 5px;
+                                    padding: 3px;
+                                    background-color: rgb({colors[2]});
+                                    border-color: rgb({colors[2]});
+                                    border-top-color: rgb({colors[1]});
+                                }}
+                                QTabBar::tab:selected:hover {{ 
+                                    background-color: rgb({colors[2]});
+                                    border-color: rgb({colors[1]});
+                                    border-top-color: rgb({colors[1]});
+                                }}
+                                QTreeWidget {{
+                                    border: {self.getPx(1)}px solid #393939;
+                                    border-bottom: {self.getPx(1)}px solid #454545;
+                                    background-color: #212121;
+                                    border-radius: 5px;
+                                }}
+                                QHeaderView::section{{
+                                    border: none;
+                                    padding: 5px;
+                                    background-color: #212121;
+                                    border-radius: 5px;  
+                                }}
+                                QGroupBox::title{{
+                                    subcontrol-position: top center;
+                                    min-height: 50px;
+                                    padding: 20px;
+                                    font-size: 13pt;
+                                }}
+                                QProgressBar:horizontal {{
+                                    border: {self.getPx(1)}px solid #393939;
+                                    border-bottom: {self.getPx(1)}px solid #454545;
+                                    background-color: #212121;
+                                    border-radius: 5px;
+                                    height: 20px;
+                                }}
+                                QProgressBar::chunk:horizontal {{
+                                    background-color: rgb({colors[2]});
+                                    border-radius: 5px;
+                                }}
+                                       """)
         else:
             self.app.setPalette(self.app.style().standardPalette())
             self.app.setStyleSheet("")
-            if(_platform=="win32"):
-                self.app.setStyle("windowsvista")
-                self.app.setStyle(QtWidgets.QStyleFactory.create("windowsvista"))
-            elif(_platform=="darwin"):
-                self.app.setStyle("macintosh")
-            elif(_platform=="linux"):
-                pass
-                self.app.setStyle("gtk2")
+            self.app.setStyle("windowsvista")
+            self.app.setStyle(QtWidgets.QStyleFactory.create("windowsvista"))
 
 
                 
@@ -103,9 +343,9 @@ class Window(QtWidgets.QMainWindow):
     
     def addTab(self, widget: QtWidgets.QWidget, icon: QtGui.QIcon, title: str, closable: bool = True) -> int:
         button = QtWidgets.QPushButton(self)
-        button.resize(QtCore.QSize(20, 20))
+        button.setFixedSize(QtCore.QSize(30, 20))
         button.setIconSize(QtCore.QSize(12, 12))
-        button.setStyleSheet("""QPushButton{border: none}QPushButton::hover{border: 1px solid grey;border-radius:3px;}""")
+        button.setStyleSheet("""QPushButton{background-color: transparent; margin-right: 10px;border: none;width: 20px; height: 20px;}QPushButton::hover{background-color: rgba(255, 96, 96, 100%); border-radius: 3px;}""")
         button.setIcon(QtGui.QIcon(getPath("not.ico")))
         i = self.tabWidget.addTab(widget, icon, title)
         if(closable):

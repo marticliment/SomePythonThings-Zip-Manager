@@ -160,8 +160,8 @@ class Extractor(QtWidgets.QWidget):
         
         self.toolBar.addSeparator()
         
-        self.magicAction = QtWidgets.QAction("Compress", self)
-        self.magicAction.setToolTip("Compress")
+        self.magicAction = QtWidgets.QAction("Extract", self)
+        self.magicAction.setToolTip("Extract")
         self.magicAction.setIcon(QtGui.QIcon(getPath("extractFiles.ico")))
         self.magicAction.triggered.connect(self.magicButtonAction)
         self.toolBar.addAction(self.magicAction)
@@ -239,6 +239,7 @@ class Extractor(QtWidgets.QWidget):
         self.treeWidget.customContextMenuRequested.connect(self.showRightClickMenu)
 
         self.magicButton = QtWidgets.QPushButton(self)
+        self.magicButton.setObjectName("AccentButton")
         self.magicButton.setFixedHeight(25)
         self.magicButton.setText("Extract")
         self.magicButton.clicked.connect(self.magicButtonAction)
@@ -252,7 +253,7 @@ class Extractor(QtWidgets.QWidget):
 
 
         self.zipFileInfo = QtWidgets.QGroupBox()
-        self.zipFileInfo.setTitle("Zip file information")
+        self.zipFileInfo.setTitle("")
         self.infoLayout = QtWidgets.QFormLayout()
         self.zipFileInfo.setLayout(self.infoLayout)
         self.zipFileInfo.setFixedWidth(256)
@@ -305,7 +306,7 @@ class Extractor(QtWidgets.QWidget):
         else:
             self.stopLoading()
     
-    def startLoading(self) -> None:
+    def startLoading(self, unzip=True) -> None:
         self.magicButton.setText("Cancel extraction")
         self.isExtracting = True
         self.treeWidget.expandAll()
@@ -315,7 +316,8 @@ class Extractor(QtWidgets.QWidget):
         self.magicAction.setText("Cancel Extraction")
         self.magicAction.setToolTip("Cancel Extraction")
         self.magicAction.setIcon(QtGui.QIcon(getPath("cancelCompress.ico")))
-        self.extractZip()
+        if unzip:
+            self.extractZip()
     
     def stopLoading(self) -> None:
         self.magicButton.setText("Extract")
@@ -453,7 +455,7 @@ class Extractor(QtWidgets.QWidget):
         try:
             callInMain = self.callInMain
             
-            callInMain.emit(lambda: self.startLoading())
+            callInMain.emit(lambda: self.startLoading(unzip=False))
             callInMain.emit(lambda: self.treeWidget.clear())
             zip = supposedZip.replace("\\", "/")
             self.zip = zip
