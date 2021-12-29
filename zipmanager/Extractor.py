@@ -120,7 +120,7 @@ class Extractor(QtWidgets.QWidget):
         self.toolBar.setContentsMargins(0, 0, 0, 0)
 
         self.addFileAction = QtWidgets.QAction("Open zip file", self)
-        self.addFileAction.setToolTip("Open zip file")
+        self.addFileAction.setToolTip("Select a zip file")
         self.addFileAction.setIcon(QtGui.QIcon(getPath("openzip.ico")))
         self.addFileAction.triggered.connect(lambda: self.openZip())
         self.toolBar.addAction(self.addFileAction)
@@ -132,20 +132,20 @@ class Extractor(QtWidgets.QWidget):
 
         self.toolBar.addSeparator()
 
-        self.selectNoneAction = QtWidgets.QAction("Select none", self)
-        self.selectNoneAction.setToolTip("Select none")
+        self.selectNoneAction = QtWidgets.QAction("Clear selection", self)
+        self.selectNoneAction.setToolTip("Uncheck every item")
         self.selectNoneAction.setIcon(QtGui.QIcon(getPath("selectnone.png")))
         self.selectNoneAction.triggered.connect(self.selectNone)
         self.toolBar.addAction(self.selectNoneAction)
         
         self.selectAllAction = QtWidgets.QAction("Select all", self)
-        self.selectAllAction.setToolTip("Select all")
+        self.selectAllAction.setToolTip("Select every item")
         self.selectAllAction.setIcon(QtGui.QIcon(getPath("selectall.png")))
         self.selectAllAction.triggered.connect(self.selectAll)
         self.toolBar.addAction(self.selectAllAction)
         
         self.invertSelectionAction = QtWidgets.QAction("Invert selection", self)
-        self.invertSelectionAction.setToolTip("Invert selection")
+        self.invertSelectionAction.setToolTip("Invert the current selection")
         self.invertSelectionAction.setIcon(QtGui.QIcon(getPath("invertselect.png")))
         self.invertSelectionAction.triggered.connect(self.invertSelection)
         self.toolBar.addAction(self.invertSelectionAction)
@@ -153,7 +153,7 @@ class Extractor(QtWidgets.QWidget):
         self.toolBar.addSeparator()
 
         self.openFilesAction = QtWidgets.QAction("Open file without extracting", self)
-        self.openFilesAction.setToolTip("Open file without extracting")
+        self.openFilesAction.setToolTip("Extract the file on a temporary directory and open it")
         self.openFilesAction.setIcon(QtGui.QIcon(getPath("window.ico")))
         self.openFilesAction.triggered.connect(self.openItemFile)
         self.toolBar.addAction(self.openFilesAction)
@@ -161,7 +161,7 @@ class Extractor(QtWidgets.QWidget):
         self.toolBar.addSeparator()
         
         self.magicAction = QtWidgets.QAction("Extract", self)
-        self.magicAction.setToolTip("Extract")
+        self.magicAction.setToolTip("Start the extraction process")
         self.magicAction.setIcon(QtGui.QIcon(getPath("extractFiles.ico")))
         self.magicAction.triggered.connect(self.magicButtonAction)
         self.toolBar.addAction(self.magicAction)
@@ -226,7 +226,7 @@ class Extractor(QtWidgets.QWidget):
 
         self.treeWidget = TreeWidget(self)
         self.treeWidget.setSortingEnabled(True)
-        self.treeWidget.setEmptyText("Select a zip file to start")
+        self.treeWidget.setEmptyText("To start, select a zip file or drag and drop one here")
         self.treeWidget.connectFileDragEvent(self.openZip)
         self.treeWidget.setHeaderLabels(["Name", "Empty Slot", "Extract or skip", "Real size", "Compressed size", "Status", "Location inside the zip"])
         self.treeWidget.setColumnWidth(5, 100)
