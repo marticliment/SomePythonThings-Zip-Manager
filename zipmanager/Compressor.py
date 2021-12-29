@@ -138,11 +138,13 @@ class Compressor(QtWidgets.QWidget):
         self.treeWidget.customContextMenuRequested.connect(self.showRightClickMenu)
 
         self.magicButton = QtWidgets.QPushButton(self)
-        self.magicButton.setFixedHeight(25)
+        self.magicButton.setFixedHeight(30)
+        self.magicButton.setObjectName("AccentButton")
         self.magicButton.setText("Compress")
         self.magicButton.clicked.connect(self.magicButtonAction)
 
         self.currentStatusBar = ProgressUpdater(self, self.mainWindow, "Compressing...", "Click compress to start")
+        self.currentStatusBar.setFixedHeight(30)
         
         self.horLayout1 = QtWidgets.QHBoxLayout()
 

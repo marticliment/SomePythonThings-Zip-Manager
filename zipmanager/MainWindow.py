@@ -205,6 +205,8 @@ class Window(QtWidgets.QMainWindow):
                                 }}
                                 QScrollArea {{
                                    color: white;
+                                   padding-left: 5px;
+                                   border-radius: 5px;
                                    background-color: #212121;
                                 }}
                                 QLabel {{
@@ -340,7 +342,7 @@ class Window(QtWidgets.QMainWindow):
                                     border-color: rgb({colors[3]});
                                     border-top-color: rgb({colors[4]});
                                 }}
-                                QTreeWidget {{
+                                QTreeWidget,QTreeView {{
                                     border: {self.getPx(1)}px solid #393939;
                                     border-bottom: {self.getPx(1)}px solid #454545;
                                     background-color: #212121;
