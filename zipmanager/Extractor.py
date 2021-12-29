@@ -30,7 +30,7 @@ class Extractor(QtWidgets.QWidget):
 
     def __init__(self, parent=None, startFile: str = ""):
         super().__init__(parent=parent)
-        self.window = parent
+        self.window: QtWidgets.QWidget = parent
         self.isExtracting = False
         self.errorWhileCompressing = None
         self.compression_level = 5
@@ -240,11 +240,12 @@ class Extractor(QtWidgets.QWidget):
 
         self.magicButton = QtWidgets.QPushButton(self)
         self.magicButton.setObjectName("AccentButton")
-        self.magicButton.setFixedHeight(25)
+        self.magicButton.setFixedHeight(30)
         self.magicButton.setText("Extract")
         self.magicButton.clicked.connect(self.magicButtonAction)
 
         self.currentStatusBar = ProgressUpdater(self, self.window, "Extracting...", "Click extract to start")
+        self.currentStatusBar.setFixedHeight(30)
         
         self.horLayout1 = QtWidgets.QHBoxLayout()
 

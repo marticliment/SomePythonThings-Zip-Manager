@@ -2,7 +2,8 @@ from PySide2 import QtWidgets, QtCore, QtGui
 from urllib.request import urlopen
 from sys import platform as _platform
 from threading import Thread
-import platform, os, sys, webbrowser, wget, subprocess
+import platform, os, webbrowser, subprocess
+from FramelessWindow import QFramelessDialog
 
 from Tools import *
 #from Tools import version, debugging, notify, log, getPath, tempDir
@@ -183,64 +184,47 @@ class checkForUpdates(QtWidgets.QProgressDialog):
     def updateProgressBar(self, mode: str) -> None:
         self.dialogSignal.emit(mode)
     
-
     def throwInfo(self, title: str, body: str) -> None:
-        global music
         log("[  INFO  ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_ok.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_ok.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Information")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
+        msg.show()
 
     def throwWarning(self, title: str, body: str) -> None:
         log("[  WARN  ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_warn.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_warn.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Warning!")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
+        msg.show()
 
     def throwError(self, title: str, body: str) -> None:
         log("[ FAILED ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_error.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_error.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Unhandled error!")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
+        msg.show()
     
     def confirm(self, title: str, body: str, firstButton: QtWidgets.QAbstractButton, secondButton: QtWidgets.QAbstractButton, defaultButton: QtWidgets.QAbstractButton) -> QtWidgets.QAbstractButton:
         msg = QtWidgets.QMessageBox(self)

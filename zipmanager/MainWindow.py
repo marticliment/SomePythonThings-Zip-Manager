@@ -8,8 +8,8 @@ from Compressor import Compressor
 from Extractor import Extractor
 from Welcome import Welcome
 from Updater import checkForUpdates
-
-
+from FramelessWindow import QFramelessDialog
+        
 class Window(QtWidgets.QMainWindow):
     resized = QtCore.Signal()
     keyRelease = QtCore.Signal(int)
@@ -105,6 +105,50 @@ class Window(QtWidgets.QMainWindow):
                                     padding: {self.getPx(4)}px;
                                     border-radius: {self.getPx(6)}px;
                                     background-color: #262626;
+                                }}
+                                QMenuBar {{
+                                    border: none;
+                                    padding: {self.getPx(2)}px;
+                                    outline: 0px;
+                                    color: white;
+                                    background: transparent;
+                                    border-radius: {self.getPx(8)}px;
+                                }}
+                                QMenuBar::separator {{
+                                    margin: {self.getPx(2)}px;
+                                    height: {self.getPx(1)}px;
+                                    background: rgb(60, 60, 60);
+                                }}
+                                QMenuBar::icon{{
+                                    padding-left: {self.getPx(10)}px;
+                                }}
+                                QMenuBar::item{{
+                                    height: {self.getPx(30)}px;
+                                    border: none;
+                                    background: transparent;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
+                                    margin: {self.getPx(2)}px;
+                                }}
+                                QMenuBar::item:selected{{
+                                    background: rgba(255, 255, 255, 10%);
+                                    height: {self.getPx(30)}px;
+                                    outline: none;
+                                    border: none;
+                                    padding: 5px;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
+                                }}  
+                                QMenuBar::item:selected:disabled{{
+                                    background: transparent;
+                                    height: {self.getPx(30)}px;
+                                    outline: none;
+                                    border: none;
+                                    padding-right: {self.getPx(10)}px;
+                                    padding-left: {self.getPx(10)}px;
+                                    border-radius: {self.getPx(4)}px;
                                 }}
                                 QMenu {{
                                     border: {self.getPx(1)}px solid rgb(60, 60, 60);
@@ -249,13 +293,13 @@ class Window(QtWidgets.QMainWindow):
                                 }}
                                 #AccentButton{{
                                     background-color: rgb({colors[3]});
-                                    border-color: rgb({colors[2]});
-                                    border-top-color: rgb({colors[1]});
+                                    border-color: rgb({colors[4]});
+                                    border-top-color: rgb({colors[5]});
                                 }}
                                 #AccentButton:hover{{
                                     background-color: rgb({colors[2]});
-                                    border-color: rgb({colors[1]});
-                                    border-top-color: rgb({colors[1]});
+                                    border-color: rgb({colors[3]});
+                                    border-top-color: rgb({colors[4]});
                                 }}
                                 QTabWidget::pane {{
                                     margin: 5px;
@@ -268,6 +312,7 @@ class Window(QtWidgets.QMainWindow):
                                 }}
                                 QTabBar::tab {{
                                     margin: 5px;
+                                    margin-right: 0px;
                                     padding: 3px;
                                     width: 200px;
                                     background-color: #363636;
@@ -286,14 +331,14 @@ class Window(QtWidgets.QMainWindow):
                                 QTabBar::tab:selected {{
                                     margin: 5px;
                                     padding: 3px;
-                                    background-color: rgb({colors[2]});
-                                    border-color: rgb({colors[2]});
-                                    border-top-color: rgb({colors[1]});
+                                    background-color: rgb({colors[3]});
+                                    border-color: rgb({colors[4]});
+                                    border-top-color: rgb({colors[5]});
                                 }}
                                 QTabBar::tab:selected:hover {{ 
                                     background-color: rgb({colors[2]});
-                                    border-color: rgb({colors[1]});
-                                    border-top-color: rgb({colors[1]});
+                                    border-color: rgb({colors[3]});
+                                    border-top-color: rgb({colors[4]});
                                 }}
                                 QTreeWidget {{
                                     border: {self.getPx(1)}px solid #393939;
@@ -302,6 +347,7 @@ class Window(QtWidgets.QMainWindow):
                                     border-radius: 5px;
                                 }}
                                 QHeaderView::section{{
+                                    padding-left: 5px;
                                     border: none;
                                     padding: 5px;
                                     background-color: #212121;
@@ -324,6 +370,39 @@ class Window(QtWidgets.QMainWindow):
                                     background-color: rgb({colors[2]});
                                     border-radius: 5px;
                                 }}
+                                #CloseTabButton {{
+                                    background-color: transparent;
+                                    margin-right: 5px;
+                                    border: none;
+                                    width: 20px;
+                                    height: 20px;
+                                }}
+                                #CloseTabButton:hover {{
+                                    background-color: #303030;
+                                    border-radius: 6px;
+                                }}
+                                QToolButton:hover {{
+                                   background-color: #3b3b3b;
+                                   border-radius: {self.getPx(6)}px;
+                                   border: {self.getPx(1)}px solid #414141;
+                                   height: {self.getPx(25)}px;
+                                   border-top: {self.getPx(1)}px solid #454545;
+                                }}
+                                QToolButton:pressed {{
+                                   background-color: #2b2b2b;
+                                   border-radius: {self.getPx(6)}px;
+                                   border: {self.getPx(1)}px solid #393939;
+                                   height: {self.getPx(25)}px;
+                                   border-top: {self.getPx(1)}px solid #393939;
+                                }}
+                                #bgDialog {{
+                                    background-color: #303030;
+                                    font-size: 13pt;
+                                }}
+                                #dialogButtonWidget {{
+                                    background-color: #212121;
+                                }}
+                                
                                        """)
         else:
             self.app.setPalette(self.app.style().standardPalette())
@@ -343,9 +422,10 @@ class Window(QtWidgets.QMainWindow):
     
     def addTab(self, widget: QtWidgets.QWidget, icon: QtGui.QIcon, title: str, closable: bool = True) -> int:
         button = QtWidgets.QPushButton(self)
-        button.setFixedSize(QtCore.QSize(30, 20))
+        button.setFixedSize(QtCore.QSize(25, 20))
         button.setIconSize(QtCore.QSize(12, 12))
-        button.setStyleSheet("""QPushButton{background-color: transparent; margin-right: 10px;border: none;width: 20px; height: 20px;}QPushButton::hover{background-color: rgba(255, 96, 96, 100%); border-radius: 3px;}""")
+        button.setObjectName("CloseTabButton")
+        #button.setStyleSheet("""QPushButton{background-color: transparent; margin-right: 10px;border: none;width: 20px; height: 20px;}QPushButton::hover{background-color: rgba(255, 96, 96, 100%); border-radius: 3px;}""")
         button.setIcon(QtGui.QIcon(getPath("not.ico")))
         i = self.tabWidget.addTab(widget, icon, title)
         if(closable):
@@ -457,64 +537,46 @@ class Window(QtWidgets.QMainWindow):
         self.createMenuBar(native=True, macOS=_platform=="darwin") # Create native menubar
 
     def throwInfo(self, title: str, body: str) -> None:
-        global music
         log("[  INFO  ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_ok.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_ok.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Information)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Information")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
+        msg.show()
 
     def throwWarning(self, title: str, body: str) -> None:
         log("[  WARN  ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_ok.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_warn.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Warning)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Warning!")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
-
-
+        msg.show()
 
     def throwError(self, title: str, body: str) -> None:
         log("[ FAILED ] "+body)
-        msg = QtWidgets.QMessageBox(self)
-        if(os.path.exists(getPath("zip_ok.ico"))):
-            msg.setIconPixmap(QtGui.QPixmap(str(getPath("zip_error.ico"))).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
-        else:
-            msg.setIcon(QtWidgets.QMessageBox.Critical)
+        msg = QFramelessDialog(self)
+        msg.setAutoFillBackground(True)
+        msg.setStyleSheet(self.styleSheet())
+        msg.setAttribute(QtCore.Qt.WA_StyledBackground)
+        msg.setObjectName("QMessageBox")
+        msg.setTitle("Unhandled error!")
         msg.setText(body)
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
+        msg.addButton("Ok", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
         msg.setWindowTitle(title)
-        msg.exec_()
+        msg.show()
 
     def confirm(self, title: str, body: str, firstButton: QtWidgets.QAbstractButton, secondButton: QtWidgets.QAbstractButton, defaultButton: QtWidgets.QAbstractButton) -> QtWidgets.QAbstractButton:
         msg = QtWidgets.QMessageBox(self)

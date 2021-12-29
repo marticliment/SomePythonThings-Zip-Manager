@@ -100,13 +100,14 @@ class ProgressUpdater(QWidget):
         self.processingText = processingText
         self.clickToStartText = clickToStartText
         self.isLoading = True
-        self.setFixedHeight(25)
+        #self.setFixedHeight(30)
         self.setUpWidgets()
         
     def setUpWidgets(self) -> None:
         self.wheelLabel = QLabel(self)
         self.progressBar = QProgressBar(self)
         self.progressBar.setAlignment(QtCore.Qt.AlignHCenter | QtCore.Qt.AlignVCenter)
+        self.progressBar.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.infoLabel = QLabel(self)
         self.infoLabel.setSizePolicy(QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored)
 
@@ -123,7 +124,7 @@ class ProgressUpdater(QWidget):
         self.wheelLabel.setMovie(self.wheelMovie)
         self.wheelLabel.hide()
         self.progressBar.setRange(0, 100)
-        self.progressBar.setFixedHeight(30)
+        #self.progressBar.setFixedHeight(30)
         if(_platform=="win32"): self.parentWindow.taskbprogress.setRange(0, 100)
         self.progressBar.setValue(0)
         if(_platform=="win32"): self.parentWindow.taskbprogress.setValue(0)
