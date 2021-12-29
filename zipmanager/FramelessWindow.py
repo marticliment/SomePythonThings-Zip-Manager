@@ -170,14 +170,14 @@ class QFramelessDialog(QFramelessWindow):
     def parent(self) -> QWidget:
         return super().parent()
     
-    def paintEvent(self, event: QPaintEvent) -> None:
+    def showEvent(self, event: QShowEvent) -> None:
         w = self.width()
         h = self.height()
         self.move(
             self.parent().window().x()+(self.parent().window().width()-w)//2,
             self.parent().window().y()+(self.parent().window().height()-h)//2
         )
-        return super().paintEvent(event)
+        return super().showEvent(event)
     
         
         
