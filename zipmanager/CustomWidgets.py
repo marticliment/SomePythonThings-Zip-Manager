@@ -12,11 +12,17 @@ class TreeWidget(QTreeWidget):
     def __init__(self, parent=None, emptyText="Hint"):
         super().__init__(parent=parent)
         self.backgroundLabel = QLabel(self)
+        self.backgroundLabel.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents)
+        self.backgroundLabel.setWordWrap(True)
         self.backgroundLabel.show()
         self.openFileAction = self.doNothing
         self.backgroundLabel.setAlignment(QtCore.Qt.AlignCenter)
         self.backgroundLabel.setText(emptyText)
-        self.backgroundLabel.resize(250, 70)
+        self.backgroundLabel.resize(400, 200)
+        self.opacity=QtWidgets.QGraphicsOpacityEffect(self)
+        self.opacity.setOpacity(0.5)
+        self.backgroundLabel.setGraphicsEffect(self.opacity)
+        self.backgroundLabel.setStyleSheet("background-color: transparent; font-size: 15pt; font-weight: light;")
         self.setColumnCount(5)
         self.setIconSize(QtCore.QSize(32, 32))
         self.setAutoScroll(True)
