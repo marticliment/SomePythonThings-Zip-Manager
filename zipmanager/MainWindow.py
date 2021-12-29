@@ -352,10 +352,18 @@ class Window(QtWidgets.QMainWindow):
                                     border-top-color: rgb({colors[4]});
                                 }}
                                 QTreeWidget,QTreeView {{
+                                    show-decoration-selected: 0;
                                     border: {self.getPx(1)}px solid #393939;
                                     border-bottom: {self.getPx(1)}px solid #454545;
                                     background-color: #212121;
                                     border-radius: 5px;
+                                    outline: none;
+                                }}
+                                QTreeView::item:selected:active{{
+                                    color: white;
+                                    background: rgb({colors[3]});
+                                    outline: none;
+                                    border: none;
                                 }}
                                 QHeaderView::section{{
                                     border: none;
