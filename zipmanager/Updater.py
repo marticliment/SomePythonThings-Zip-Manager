@@ -3,7 +3,7 @@ from urllib.request import urlopen
 from sys import platform as _platform
 from threading import Thread
 import platform, os, webbrowser, subprocess
-from FramelessWindow import QFramelessDialog
+from FramelessWindow import QFramelessDialog, QFramelessWindow
 
 from Tools import *
 #from Tools import version, debugging, notify, log, getPath, tempDir
@@ -54,10 +54,15 @@ class checkForUpdates(QtWidgets.QProgressDialog):
         self.dialogSignal.connect(self.setLabelText)
         self.sysExitSignal.connect(lambda: self.parent().app.closeAllWindows())
         self.askUpdatesSignal.connect(self.askUpdates)
-        self.closeDialogSignal.connect(self.close)
-        self.hideDialogSignal.connect(self.hide)
+        def close():
+            self.hide()
+            parent.window().showNormal()
+            parent.window().raise_()
+        self.closeDialogSignal.connect(close)
+        self.hideDialogSignal.connect(close)
         self.continueSignal.connect(self.checkIfUpdates)
         self.setMinimumDuration(0)
+        self.response = ""
         self.setAutoClose(True)
         if(_platform == 'darwin'):
             self.setAutoFillBackground(True)
@@ -120,11 +125,28 @@ class checkForUpdates(QtWidgets.QProgressDialog):
 
     def askUpdates(self, response: str) -> None:
         notify("SomePythonThings Zip Manager Updater", "SomePythonThings Zip Manager has a new update!\nActual version: {0}\nNew version: {1}".format(version, response.split("///")[0]))
-        if QtWidgets.QMessageBox.Yes == self.confirm('SomePythonThings Zip Manager', "There are some updates available for SomePythonThings Zip Manager:\nYour version: "+str(version)+"\nNew version: "+str(response.split("///")[0])+"\nNew features: \n"+response.split("///")[1]+"\nDo you want to download and install them?", QtWidgets.QMessageBox.Yes, QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes):
-
-            #                'debian': debian link in posotion 2                  'win32' Windows 32bits link in position 3           'win64' Windows 64bits in position 4                   'macos' macOS 64bits INTEL in position 5
-            self.show()
-            self.downloadUpdates({'debian': response.split("///")[2].replace('\n', ''), 'win32': response.split("///")[3].replace('\n', ''), 'win64': response.split("///")[4].replace('\n', ''), 'macos':response.split("///")[5].replace('\n', '')})
+        msg = QFramelessDialog(self)
+        msg.setTitle("There are some updates available for SomePythonThings Zip Manager:")
+        self.response = response
+        msg.setText(f"""Your version: <b>{str(version)}</b><br>
+New version: <b>{str(response.split('///')[0])}</b><br>
+<h2>New features:</h2><br>
+{response.split("///")[1]}<br>
+<b>Do you want to download and install them?</b><br>""")
+        msg.addButton("Install", QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole)
+        msg.addButton("Later", QtWidgets.QDialogButtonBox.ButtonRole.YesRole)
+        msg.setDefaultButtonRole(QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole, self.styleSheet())
+        msg.show()
+        msg.clicked.connect(self.aftertAnswer)
+        
+        
+    def aftertAnswer(self, answer: QtWidgets.QDialogButtonBox.ButtonRole):
+        if answer == QtWidgets.QDialogButtonBox.ButtonRole.AcceptRole:
+            if len(self.response.split("///"))>=5:
+                self.show()
+                self.downloadUpdates({'win64': self.response.split("///")[4].replace('\n', '')})
+            else:
+                throwError("Update failed", "We were unable to download the update. Please try it again later. If the error persists, please contact us at somepythonthingschannel@gmail.com")
         else:
             self.closeDialogSignal.emit()
             log("[  WARN  ] User aborted update!")

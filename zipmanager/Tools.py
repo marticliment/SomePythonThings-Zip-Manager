@@ -239,19 +239,21 @@ def winIsLight() -> bool:
         else:
             return True
 
-def openSettingsWindow(parent):
+def openSettingsWindow(parent: QtWidgets.QMainWindow):
     global settings
-    settingsWindow = QtWidgets.QMainWindow(parent)   
-    settingsWindow.setFixedSize(400, 350)
+    from FramelessWindow import QFramelessWindow
+    settingsWindow = QFramelessWindow(parent)   
+    settingsWindow.setFixedSize(400, 420)
+    w = settingsWindow.width()
+    h = settingsWindow.height()
+    settingsWindow.move(
+        parent.window().x()+(parent.window().width()-w)//2,
+        parent.window().y()+(parent.window().height()-h)//2
+    )
     settingsWindow.setWindowTitle("SomePythonThings Zip Manager Settings")
+    settingsWindow.setObjectName("darkbackground")
     settingsWindow.setWindowFlag(QtCore.Qt.WindowMinimizeButtonHint, False)
     settingsWindow.setWindowModality(QtCore.Qt.ApplicationModal)
-    if(_platform == 'darwin'):
-        settingsWindow.setAutoFillBackground(True)
-        settingsWindow.setWindowModality(QtCore.Qt.WindowModal)
-        settingsWindow.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-        settingsWindow.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-        settingsWindow.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
     
     layout = QtWidgets.QVBoxLayout()
 
@@ -260,7 +262,7 @@ def openSettingsWindow(parent):
 
 
     themeSettings = QtWidgets.QGroupBox()
-    if(_platform=="darwin"):themeSettings.setFixedWidth(345)
+    themeSettings.setObjectName("lightbackground")
     themeSettings.setTitle("General")
 
     l = QtWidgets.QFormLayout()
@@ -289,7 +291,7 @@ def openSettingsWindow(parent):
     layout.addWidget(themeSettings)
     
     compressionSettings = QtWidgets.QGroupBox()
-    if(_platform=="darwin"):compressionSettings.setFixedWidth(345)
+    compressionSettings.setObjectName("lightbackground")
     compressionSettings.setTitle("Compression Settings")
     l = QtWidgets.QFormLayout()
     compressionSettings.setLayout(l)
@@ -312,7 +314,7 @@ def openSettingsWindow(parent):
     layout.addWidget(compressionSettings)
 
     extractionSettings = QtWidgets.QGroupBox()
-    if(_platform=="darwin"):extractionSettings.setFixedWidth(345)
+    extractionSettings.setObjectName("lightbackground")
     extractionSettings.setTitle("Extraction Settings")
     l = QtWidgets.QFormLayout()
     extractionSettings.setLayout(l)
@@ -329,6 +331,7 @@ def openSettingsWindow(parent):
 
     saveButton = QtWidgets.QPushButton()
     saveButton.setText("Save settings and close")
+    saveButton.setObjectName("AccentButton")
     saveButton.clicked.connect(lambda: saveAndCloseSettings(modeSelector, plainAppearance, algorithmSelector, settingsWindow, levelSelector, create_subfolder, parent, autoUpdate))
     layout.addWidget(saveButton)
 

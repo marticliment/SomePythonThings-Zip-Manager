@@ -100,6 +100,15 @@ class Window(QtWidgets.QMainWindow):
                                 #background {{
                                     background-color: #262626;
                                 }}
+                                #darkbackground {{
+                                    background-color: #212121;
+                                }}
+                                #lightbackground {{
+                                    background-color: #303030;
+                                    border: {self.getPx(1)}px solid #262626;
+                                    height: {self.getPx(25)}px;
+                                    border-top: {self.getPx(1)}px solid #262626;
+                                }}
                                 QToolTip {{
                                     border: {self.getPx(1)}px solid #222222;
                                     padding: {self.getPx(4)}px;
@@ -349,17 +358,21 @@ class Window(QtWidgets.QMainWindow):
                                     border-radius: 5px;
                                 }}
                                 QHeaderView::section{{
-                                    padding-left: 5px;
                                     border: none;
                                     padding: 5px;
                                     background-color: #212121;
                                     border-radius: 5px;  
                                 }}
+                                QGroupBox {{
+                                    padding-top: 30px;
+                                    border: none;
+                                }}
                                 QGroupBox::title{{
-                                    subcontrol-position: top center;
-                                    min-height: 50px;
-                                    padding: 20px;
-                                    font-size: 13pt;
+                                    border: none;
+                                    font-size: 15pt;
+                                    margin-top: 10px;
+                                    margin-left: 10px;
+                                    subcontrol-position: top left;
                                 }}
                                 QProgressBar:horizontal {{
                                     border: {self.getPx(1)}px solid #393939;
@@ -403,6 +416,44 @@ class Window(QtWidgets.QMainWindow):
                                 }}
                                 #dialogButtonWidget {{
                                     background-color: #212121;
+                                }}
+                                QComboBox {{
+                                    margin: 0px;
+                                    padding: 6px;
+                                    height: 20px;
+                                    background-color: #3b3b3b;
+                                    border-radius: {self.getPx(6)}px;
+                                    border: {self.getPx(1)}px solid #414141;
+                                    border-top: {self.getPx(1)}px solid #454545;
+                                }}
+                                QAbstractItemView {{
+                                    padding: 0px;
+                                    border-radius: 4px;
+                                }}
+                                QComboBox QAbstractItemView {{
+                                    border: {self.getPx(1)}px solid rgb(60, 60, 60);
+                                    outline: 0px;
+                                    color: white;
+                                    background: #262626;
+                                    border-radius: {self.getPx(8)}px;
+                                    padding: 3px;
+                                    margin: 0px;
+                                }}
+                                QComboBox::drop-down {{
+                                    subcontrol-origin: margin;
+                                    subcontrol-position: top right;
+                                    width: 15px;
+                                    margin: 4px;
+                                    padding: 3px;
+                                    background-color: #2b2b2b;
+                                    border-radius: {self.getPx(4)}px;
+                                    border: {self.getPx(1)}px solid #303030;
+                                    border-top: {self.getPx(1)}px solid #363636;
+                                    
+                                }}
+                                QAbstractScrollArea::cornerWidget {{
+                                    border: none;
+                                    background: transparent;
                                 }}
                                 
                                        """)
