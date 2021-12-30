@@ -1,8 +1,7 @@
 from PySide2 import QtWidgets, QtGui, QtCore
 from Tools import *
 #from Tools import log, openLog, openHelp, openSettingsWindow, getPath, CheckModeThread, baseStyleSheet, settings, version, realpath
-import darkdetect, qtmodern.styles, sys, os
-import qtmodern.styles
+import darkdetect, sys, os
 from sys import platform as _platform
 from Compressor import Compressor
 from Extractor import Extractor

@@ -12,7 +12,7 @@ a = Analysis(['__init__.py'],
              pathex=['Y:\\SPTPrograms\\SomePythonThings-Zip-Manager\\zipmanager'],
              binaries=[('Compressor.py', '.'), ('Extractor.py', '.'), ('CustomWidgets.py', '.'), ('MainWindow.py', '.'), ('Tools.py', '.'), ('Updater.py', '.'), ('Welcome.py', '.')],
              datas=[('res', 'res')],
-             hiddenimports=['pkg_resources.py2_warn', ".Tools.*", "json", "darkdetect", "qtmodern", "qt_thread_updater", "wget", "PySide2.*", "zipfile", "threading", "PySide2"],
+             hiddenimports=['pkg_resources.py2_warn', ".Tools.*", "json", "darkdetect", "qt_thread_updater", "wget", "PySide2.*", "zipfile", "threading", "PySide2"],
              hookspath=[],
              runtime_hooks=[],
              excludes=['eel', 'tkinter', "PyQt5"],
@@ -21,9 +21,6 @@ a = Analysis(['__init__.py'],
              cipher=block_cipher,
              noarchive=False)
 
-
-a.datas += [('./qtmodern/resources/frameless.qss', f'res/qtmodern/frameless.qss', "DATA")]
-a.datas += [('./qtmodern/resources/style.qss', f'res/qtmodern/style.qss', "DATA")]
 
 
 pyz = PYZ(a.pure, a.zipped_data,
