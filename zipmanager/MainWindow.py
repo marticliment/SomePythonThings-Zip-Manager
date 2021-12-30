@@ -81,7 +81,6 @@ class Window(QtWidgets.QMainWindow):
             if(isLight):
                 qtmodern.styles.light(self.app)
             else:
-                qtmodern.styles.dark(self.app)
                 colors = getColors()
                 self.app.setStyleSheet(f"""
                                 * {{
@@ -211,6 +210,7 @@ class Window(QtWidgets.QMainWindow):
                                     padding: 5px;
                                     border-radius: {self.getPx(6)}px;
                                     border: 1px solid #262626;
+                                    selection-background-color: rgb({colors[3]});
                                 }}
                                 QScrollArea {{
                                    color: white;
@@ -352,12 +352,19 @@ class Window(QtWidgets.QMainWindow):
                                     border-top-color: rgb({colors[4]});
                                 }}
                                 QTreeWidget,QTreeView {{
+                                    color: #dddddd;
                                     show-decoration-selected: 0;
                                     border: {self.getPx(1)}px solid #393939;
                                     border-bottom: {self.getPx(1)}px solid #454545;
                                     background-color: #212121;
                                     border-radius: 5px;
                                     outline: none;
+                                }}
+                                QTreeView::item:hover{{
+                                    color: #dddddd;
+                                    background: transparent;
+                                    outline: none;
+                                    border: none;
                                 }}
                                 QTreeView::item:selected:active{{
                                     color: white;
