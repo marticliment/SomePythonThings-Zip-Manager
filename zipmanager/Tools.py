@@ -25,7 +25,7 @@ defaultSettings = {
     "create_subdir": True,
     "mode": "auto",
     "autoCheckForUpdates": True,
-    "plainAppearance": _platform=="darwin"
+    "plainAppearance": False
 }
 settings = defaultSettings.copy()
 
@@ -115,22 +115,6 @@ def openOnExplorer(file: str, force: bool = True) -> None:
             subprocess.run('start explorer /select,"{0}"'.format(file.replace("/", "\\")), shell=True)
         except:
             log("[  WARN  ] Unable to show file {0} on file explorer.".format(file))
-    elif (_platform == 'darwin'):
-        if(force):
-            try:
-                os.system('open "'+file+'"')
-            except:
-                log("[  WARN  ] Unable to show file {0} on finder.".format(file))
-        else:
-            try:
-                os.system("open "+("/".join(str(file).split("/")[:-1])))
-            except:
-                log("[  WARN  ] Unable to show file {0} on finder.".format(file))
-    elif (_platform == 'linux' or _platform == 'linux2'):
-        try:
-            Thread(target=os.system, args=("xdg-open "+file,), daemon=True).start()
-        except:
-            log("[  WARN  ] Unable to show file {0} on default file explorer.".format(file))
 
 class CheckModeThread(QtCore.QThread):
     refreshTheme = QtCore.Signal()

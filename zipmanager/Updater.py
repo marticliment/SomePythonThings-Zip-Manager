@@ -67,14 +67,6 @@ class checkForUpdates(QtWidgets.QProgressDialog):
         self.setMinimumDuration(0)
         self.response = ""
         self.setAutoClose(True)
-        if(_platform == 'darwin'):
-            self.setAutoFillBackground(True)
-            self.setWindowModality(QtCore.Qt.WindowModal)
-            self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            self.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            self.setModal(True)
-            self.setSizeGripEnabled(False)
         if(self.verbose):
             self.show()
         else:
@@ -157,9 +149,7 @@ New version: <b>{str(response.split('///')[0])}</b><br>
 
     def downloadUpdates(self, links: dict) -> None:
         log('[   OK   ] Reached downloadUpdates. Download links are "{0}"'.format(links))
-        if _platform == 'linux' or _platform == 'linux2':  # If the OS is linux
-            raise NotImplementedError("Linux is not supported anymore")
-        elif _platform == 'win32':  # if the OS is windows
+        if _platform == 'win32':  # if the OS is windows
             if(int(platform.release())<10):
                 self.throwErrorSignal.emit("Outdated Operating System", "Windows 7, 8 and 8.1 won't be supported on next SomePythonThings Zip Manager versions. Please upgrade to Windows 10 to recieve new updates")
                 self.closeDialogSignal.emit()
@@ -172,8 +162,6 @@ New version: <b>{str(response.split('///')[0])}</b><br>
                 t = Thread(target=self.download_win, args=(url,))
                 t.daemon=True
                 t.start()
-        elif _platform == 'darwin':
-            raise NotImplementedError("Linux is not supported anymore")
         else:  # If os is unknown
             webbrowser.open_new('https://www.somepythonthings.tk/programs/somepythonthings-zip-manager/')
 
@@ -258,15 +246,6 @@ New version: <b>{str(response.split('///')[0])}</b><br>
             msg.setIconPixmap(QtGui.QPixmap(getPath("zip.ico")).scaledToHeight(96, QtCore.Qt.SmoothTransformation))
         else:
             msg.setIcon(QtWidgets.QMessageBox.Warning)
-        
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
         msg.setWindowTitle(title)
         msg.setText(body)
         msg.addButton(firstButton)

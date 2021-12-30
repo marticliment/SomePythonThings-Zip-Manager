@@ -432,20 +432,8 @@ class Extractor(QtWidgets.QWidget):
     
     def openOSFileDirectly(self, file: str) -> None:
         log(f"[        ] Spawining process to open file {file}")
-        if(_platform=="win32"):
-            os.startfile(file)
-            c = 0
-            #c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        elif(_platform=="darwin"):
-            c = os.system(f"open \"{file}\"")
-            #c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        else:
-            c = os.system(f"xdg-open \"{file}\"")
-            #c = subprocess.run(f"xdg-open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if(c != 0):
-            self.throwError("Error opening file", f"Unable to open file \"{file}\"\n\nOutput code: \"{c.returncode}\"\n\nError Details: \n\"{str(c.stdout)}\"")
-        else:
-            log("[   OK   ] File opened succesfully (exit code is 0)")
+        os.startfile(file)
+        
 
     def openZip(self, filepath: str = "") -> None:
         try:
@@ -791,6 +779,7 @@ class Extractor(QtWidgets.QWidget):
             self.stopLoadingSignal.emit()
             log('[ FAILED ] Error occurred while extracting zip File')
             self.throwErrorSignal.emit("SomePythonThings Zip Manager", 'Unable to extract the zip\n\nReason:\n'+str(e))
+
 
 
 

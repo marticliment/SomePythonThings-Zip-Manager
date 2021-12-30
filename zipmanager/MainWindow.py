@@ -524,7 +524,7 @@ class Window(QtWidgets.QMainWindow):
         t = self.addTab(Extractor(self, zipFile), QtGui.QIcon(getPath("extractFiles.ico")), tabName)
         self.tabWidget.setCurrentIndex(t)
 
-    def createMenuBar(self, native: bool = False, macOS: bool = False) -> QtWidgets.QMenuBar:
+    def createMenuBar(self, native: bool = False) -> QtWidgets.QMenuBar:
         if not(self.menuBarAlreadyCreated):
             menuBar = self.menuBar()
             self.menuBarAlreadyCreated = True
@@ -588,23 +588,10 @@ class Window(QtWidgets.QMainWindow):
         aboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2022 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
         helpMenu.addAction(aboutAction)
 
-        if(macOS):
-            legacyAboutAction = QtWidgets.QAction("About", self)
-            legacyAboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2022 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
-            helpMenu.addAction(legacyAboutAction)
-
-            
-            legacyOpenSettingsAction = QtWidgets.QAction("Settings", self)
-            legacyOpenSettingsAction.triggered.connect(lambda: openSettingsWindow(self))
-            settingsMenu.addAction(legacyOpenSettingsAction)
-
-
         return menuBar
 
     def loadMenuBar(self) -> None:
-        if(_platform=="darwin"):
-            self.createMenuBar(native=False) # Create non native menubar on macOS
-        self.createMenuBar(native=True, macOS=_platform=="darwin") # Create native menubar
+        self.createMenuBar(native=True) # Create native menubar
 
     def throwInfo(self, title: str, body: str) -> None:
         log("[  INFO  ] "+body)
@@ -656,14 +643,6 @@ class Window(QtWidgets.QMainWindow):
         else:
             msg.setIcon(QtWidgets.QMessageBox.Warning)
         
-        if(_platform == 'darwin'):
-            msg.setAutoFillBackground(True)
-            msg.setWindowModality(QtCore.Qt.WindowModal)
-            msg.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
-            msg.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
-            msg.setWindowFlag(QtCore.Qt.WindowCloseButtonHint, False)
-            msg.setModal(True)
-            msg.setSizeGripEnabled(False)
         msg.setWindowTitle(title)
         msg.setText(body)
         msg.addButton(firstButton)
