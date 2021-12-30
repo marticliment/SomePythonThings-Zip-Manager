@@ -325,7 +325,7 @@ class Compressor(QtWidgets.QWidget):
                             item.setText(3, filename)
                             item.setText(4, "/")
                             try:
-                                item.setIcon(0, QtGui.QIcon(getFileIcon(filename)))
+                                item.setIcon(0, QtGui.QIcon(getFileIcon(filename, skipCacheOnExe=True)))
                             except:
                                 pass
                             self.treeWidget.addTopLevelItem(item)
