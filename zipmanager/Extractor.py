@@ -57,6 +57,10 @@ class Extractor(QtWidgets.QWidget):
             
         self.cachedIcons = {}
         
+        self.itemsToProcess = []
+        self.filesCount = 0
+        self.foldersCount = 0
+        
         
         if not(settings["plainAppearance"]):
             if(settings["mode"] == "dark"):
@@ -132,22 +136,33 @@ class Extractor(QtWidgets.QWidget):
 
         self.toolBar.addSeparator()
 
+        self.showCheckboxesAction = QtWidgets.QAction("Show checkboxes for each file", self)
+        self.showCheckboxesAction.setToolTip("Show select/deselect checkboxes for each file")
+        self.showCheckboxesAction.setIcon(QtGui.QIcon(getPath("enablechecks.ico")))
+        self.showCheckboxesAction.triggered.connect(self.addCheckboxes)
+        self.showCheckboxesAction.setObjectName("AccentColor")
+        self.showCheckboxesAction.setEnabled(True)
+        self.toolBar.addAction(self.showCheckboxesAction)
+
         self.selectNoneAction = QtWidgets.QAction("Clear selection", self)
         self.selectNoneAction.setToolTip("Uncheck every item")
         self.selectNoneAction.setIcon(QtGui.QIcon(getPath("selectnone.png")))
         self.selectNoneAction.triggered.connect(self.selectNone)
+        self.selectNoneAction.setEnabled(False)
         self.toolBar.addAction(self.selectNoneAction)
         
         self.selectAllAction = QtWidgets.QAction("Select all", self)
         self.selectAllAction.setToolTip("Select every item")
         self.selectAllAction.setIcon(QtGui.QIcon(getPath("selectall.png")))
         self.selectAllAction.triggered.connect(self.selectAll)
+        self.selectAllAction.setEnabled(False)
         self.toolBar.addAction(self.selectAllAction)
         
         self.invertSelectionAction = QtWidgets.QAction("Invert selection", self)
         self.invertSelectionAction.setToolTip("Invert the current selection")
         self.invertSelectionAction.setIcon(QtGui.QIcon(getPath("invertselect.png")))
         self.invertSelectionAction.triggered.connect(self.invertSelection)
+        self.invertSelectionAction.setEnabled(False)
         self.toolBar.addAction(self.invertSelectionAction)
         
         self.toolBar.addSeparator()
@@ -226,7 +241,7 @@ class Extractor(QtWidgets.QWidget):
 
         self.treeWidget = TreeWidget(self)
         self.treeWidget.setSortingEnabled(True)
-        self.treeWidget.setEmptyText("To start, select a zip file or drag and drop one here")
+        self.treeWidget.setEmptyText("To start, select a zip file with the top-left folder icon or <i>drag and drop</i> one here")
         self.treeWidget.connectFileDragEvent(self.openZip)
         self.treeWidget.setHeaderLabels(["Name", "Empty Slot", "Extract or skip", "Real size", "Compressed size", "Status", "Location inside the zip"])
         self.treeWidget.setColumnWidth(5, 100)
@@ -284,7 +299,13 @@ class Extractor(QtWidgets.QWidget):
         self.zipAlgorithm.setFocusPolicy(QtCore.Qt.NoFocus)
         self.infoLayout.addRow("Used algoritms: ", self.zipAlgorithm)
 
+        self.filesQuantLabel = QtWidgets.QLineEdit()
+        self.filesQuantLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.infoLayout.addRow("Compressed files: ", self.filesQuantLabel)
 
+        self.foldersQuantLabel = QtWidgets.QLineEdit()
+        self.foldersQuantLabel.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.infoLayout.addRow("Compressed folders: ", self.foldersQuantLabel)
 
 
         verLayout1.addWidget(self.zipFileInfo)
@@ -396,6 +417,7 @@ class Extractor(QtWidgets.QWidget):
 
         menu.addSeparator()
         
+        menu.addAction(self.showCheckboxesAction)
         menu.addAction(self.selectNoneAction)
         menu.addAction(self.selectAllAction)
         menu.addAction(self.invertSelectionAction)
@@ -470,11 +492,14 @@ class Extractor(QtWidgets.QWidget):
             files = []
             folders: dict = {}
             infos = []
+            self.filesCount = 0
+            self.foldersCount = 0
 
             for element in zipFile.namelist():
                 if(element[-1] == "/"): # if isdir
-                    pass
+                    self.foldersCount += 1
                 else:
+                    self.filesCount += 1
                     files.append(element.split('/'))
                     infoelement = zipFile.getinfo(element)
                     infos.append(infoelement)
@@ -513,11 +538,13 @@ class Extractor(QtWidgets.QWidget):
             except ZeroDivisionError:
                 callInMain.emit(lambda: self.zipRate.setText("100%"))
             callInMain.emit(lambda: self.zipAlgorithm.setText(zipAlgorithms))
+            callInMain.emit(lambda: self.filesQuantLabel.setText(str(self.filesCount)+" files"))
+            callInMain.emit(lambda: self.foldersQuantLabel.setText(str(self.foldersCount)+" folders"))
 
             
             
             infoindex = 0
-            itemsToProcess = []
+            self.itemsToProcess = []
             folderIcon = QtGui.QIcon(getFileIcon(os.path.expanduser("~")))
             
             def newItem(path, info, dirLevel, file):
@@ -540,7 +567,7 @@ class Extractor(QtWidgets.QWidget):
                     except:
                         pass
                 folders[idpath] = item
-                itemsToProcess.append(item)
+                self.itemsToProcess.append(item)
                 
             for file in files:
                 try:
@@ -574,6 +601,38 @@ class Extractor(QtWidgets.QWidget):
                 callInMain.emit(lambda: self.treeWidget.addTopLevelItem(folder))
             callInMain.emit(lambda: self.treeWidget.expandAll())
             
+            if(self.treeWidget.topLevelItemCount() == 1):
+                callInMain.emit(lambda: self.subdircheck.setChecked(False))
+                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder: "))
+                callInMain.emit(lambda: self.subdircheck.setEnabled(False))
+                callInMain.emit(lambda: self.subdircheck.setToolTip("This zip file has a root folder already!"))
+            else:
+                callInMain.emit(lambda: self.subdircheck.setEnabled(False))
+                callInMain.emit(lambda: self.subdircheck.setChecked(settings["create_subdir"]))
+                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder: "))
+                
+            if self.filesCount+self.foldersCount <= 300:
+                self.addCheckboxes()
+                self.callInMain.emit(lambda: self.selectNoneAction.setEnabled(True))
+                self.callInMain.emit(lambda: self.selectAllAction.setEnabled(True))
+                self.callInMain.emit(lambda: self.showCheckboxesAction.setVisible(False))
+                self.callInMain.emit(lambda: self.invertSelectionAction.setEnabled(True))
+            else:
+                self.callInMain.emit(lambda: self.selectNoneAction.setEnabled(False))
+                self.callInMain.emit(lambda: self.selectAllAction.setEnabled(False))
+                self.callInMain.emit(lambda: self.showCheckboxesAction.setVisible(True))
+                self.callInMain.emit(lambda: self.invertSelectionAction.setEnabled(False))
+            
+            callInMain.emit(lambda: self.stopLoading())
+        except Exception as e:
+            callInMain.emit(lambda: self.stopLoading())
+            callInMain.emit(lambda: self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e)))
+            if(debugging):
+                raise e
+            
+    def addCheckboxes(self) -> None:
+        try:
+            log("[  INFO  ] Showing chekboxes")      
             def changeState(checkbox: CheckBoxAction, item: QtWidgets.QTreeWidgetItem):
                 if(checkbox.avoidInternalChecking):
                     checkbox.avoidInternalChecking = False
@@ -588,30 +647,23 @@ class Extractor(QtWidgets.QWidget):
                             subcheckbox.setChecked(checkbox.isChecked())
                         else:
                             log("[  WARN  ] Unable to disable/enable other checkboxes")
-                        
-                        
-                        
+
             def addCheckbox(item):
                 checkbox = CheckBoxActionForTreeWidget(checked=True, onState="Extract", offState="Skip")
                 checkbox.check.stateChanged.connect(lambda: changeState(checkbox, item))
                 item.treeWidget().setItemWidget(item, 2, checkbox)     
                         
-            for item in itemsToProcess:
-                callInMain.emit(lambda: addCheckbox(item))
-                
-            if(self.treeWidget.topLevelItemCount() == 1):
-                callInMain.emit(lambda: self.subdircheck.setChecked(False))
-                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder (This zip file has a root folder already!): "))
-            else:
-                callInMain.emit(lambda: self.subdircheck.setChecked(settings["create_subdir"]))
-                callInMain.emit(lambda: self.subdircheck.setText("Extract on a new folder: "))
-            callInMain.emit(lambda: self.stopLoading())
+            for item in self.itemsToProcess:
+                self.callInMain.emit(lambda: addCheckbox(item))
+            self.callInMain.emit(lambda: self.selectNoneAction.setEnabled(True))
+            self.callInMain.emit(lambda: self.selectAllAction.setEnabled(True))
+            self.callInMain.emit(lambda: self.showCheckboxesAction.setVisible(False))
+            self.callInMain.emit(lambda: self.invertSelectionAction.setEnabled(True))
         except Exception as e:
-            callInMain.emit(lambda: self.stopLoading())
-            callInMain.emit(lambda: self.throwError("SomePythonThings Zip Manager", "Unable to select zip file.\n\nReason:\n"+str(e)))
-            if(debugging):
+            self.window.throwError("Unexpected error", f"An error occurred while loading the checkboxes\n\nError details: {str(e)}")
+            if debugging:
                 raise e
-            
+                
 
     def extractZip(self):
         zip = self.zip
