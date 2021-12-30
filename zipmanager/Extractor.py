@@ -69,18 +69,19 @@ class Extractor(QtWidgets.QWidget):
                 isLight = True
             else:
                 isLight = darkdetect.isLight() if darkdetect.isLight()!=None else True
+            colors = getColors()
             if(isLight):
                 self.setStyleSheet(f"""
                     #QCheckBoxAction::indicator {{width: 12px;height: 12px;}}
-                    #QCheckBoxAction::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedBlack.png")});}}
-                    #QCheckBoxAction::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndBlack.png")});}}
+                    #QCheckBoxAction::indicator:checked{{background-color: rgb({colors[2]});border-radius: 3px;image: url({getPath("checkCheckedBlack.png")});}}
+                    #QCheckBoxAction::indicator:indeterminate{{background-color: rgb({colors[2]});border-radius: 3px;image: url({getPath("checkUnknowndBlack.png")});}}
                     #QCheckBoxAction::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedBlack.png")});}}
                     """)
             else:
                 self.setStyleSheet(f"""
                     #QCheckBoxAction::indicator {{width: 12px;height: 12px;}}
-                    #QCheckBoxAction::indicator:checked{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkCheckedWhite.png")});}}
-                    #QCheckBoxAction::indicator:indeterminate{{background-color: #058fff;border-radius: 3px;image: url({getPath("checkUnknowndWhite.png")});}}
+                    #QCheckBoxAction::indicator:checked{{background-color: rgb({colors[3]});border-radius: 3px;image: url({getPath("checkCheckedWhite.png")});}}
+                    #QCheckBoxAction::indicator:indeterminate{{background-color: rgb({colors[3]});border-radius: 3px;image: url({getPath("checkUnknowndWhite.png")});}}
                     #QCheckBoxAction::indicator:unchecked{{background-color: transparent;border-radius: 3px;image: url({getPath("checkUncheckedWhite.png")});}}
                     """)
             

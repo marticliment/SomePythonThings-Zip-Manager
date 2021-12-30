@@ -464,7 +464,9 @@ class Window(QtWidgets.QMainWindow):
                                     border-radius: {self.getPx(4)}px;
                                     border: {self.getPx(1)}px solid #303030;
                                     border-top: {self.getPx(1)}px solid #363636;
-                                    
+                                }}
+                                QComboBox::down-arrow{{
+                                    image: url({getPath("expand.png")})
                                 }}
                                 QAbstractScrollArea::cornerWidget {{
                                     border: none;
