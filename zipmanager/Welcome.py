@@ -26,7 +26,7 @@ class Welcome(QtWidgets.QWidget):
         self.extractButton.setIconSize(QtCore.QSize(96, 96))
  
         self.infoLabel = QtWidgets.QLabel(self)
-        self.infoLabel.setText(f"SomePythonThings Zip Manager v{version}  © 2021 The SomePythonThings Project")
+        self.infoLabel.setText(f"SomePythonThings Zip Manager v{version}  © 2022 The SomePythonThings Project")
 
         self.checkForUpdatesButton = QtWidgets.QPushButton(self)
         self.checkForUpdatesButton.setText("Check for updates...")

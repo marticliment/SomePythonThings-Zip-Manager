@@ -576,12 +576,12 @@ class Window(QtWidgets.QMainWindow):
         helpMenu.addAction(aboutQtAction)
         
         aboutAction = QtWidgets.QAction(" About SomePythonThings Zip Manager", self)
-        aboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
+        aboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2022 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
         helpMenu.addAction(aboutAction)
 
         if(macOS):
             legacyAboutAction = QtWidgets.QAction("About", self)
-            legacyAboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2021 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
+            legacyAboutAction.triggered.connect(lambda: self.throwInfo("About SomePythonThings Zip Manager", "SomePythonThings Zip Manager\nVersion "+str(self.version)+"\n\nThe SomePythonThings Project\n\n © 2022 Martí Climent, SomePythonThings\nhttps://www.somepythonthings.tk\n\n\nThe Blue Folder Logo has a CC Non-Commercial Atribution 4.0 License\nIcons by Icons8  (https://icons8.com)"))
             helpMenu.addAction(legacyAboutAction)
 
             

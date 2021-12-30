@@ -328,7 +328,7 @@ https://www.somepythonthings.tk/programs/somepythonthings-zip-manager
 
 `      `identification within third-party archives.
 
-`   `Copyright [2021] [The SomePythonThings Project]
+`   `Copyright [2022] [The SomePythonThings Project]
 
 `   `Licensed under the Apache License, Version 2.0 (the "License");
 
@@ -353,5 +353,5 @@ https://www.somepythonthings.tk/programs/somepythonthings-zip-manager
 
 You can view the licenses again on https://www.somepythonthings.tk/terms-and-conditions
 
-© 2018-2021 The SomePythonThings Project, SomePythonThings, https://www.somepythonthings.tk
+© 2018-2022 The SomePythonThings Project, SomePythonThings, https://www.somepythonthings.tk
 
