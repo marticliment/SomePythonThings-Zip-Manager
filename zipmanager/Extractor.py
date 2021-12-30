@@ -780,7 +780,7 @@ class Extractor(QtWidgets.QWidget):
             else:
                 log('[   OK   ] Zip file extracted sucessfully')
                 self.throwInfoSignal.emit("SomePythonThings Zip Manager", 'Zip file extracted sucessfully')
-            openOnExplorer(directory, force=True)
+            os.startfile(directory)
         except Exception as e:
             if debugging:
                 raise e
