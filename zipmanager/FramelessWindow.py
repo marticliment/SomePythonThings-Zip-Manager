@@ -171,6 +171,7 @@ class QFramelessDialog(QFramelessWindow):
         return super().parent()
     
     def showEvent(self, event: QShowEvent) -> None:
+        self.parent().window().setWindowOpacity(0.8)
         w = self.width()
         h = self.height()
         self.move(
@@ -178,6 +179,11 @@ class QFramelessDialog(QFramelessWindow):
             self.parent().window().y()+(self.parent().window().height()-h)//2
         )
         return super().showEvent(event)
+    
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self.parent().window().setWindowOpacity(1)
+        return super().closeEvent(event)
+        
     
         
         
