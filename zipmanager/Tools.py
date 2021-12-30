@@ -107,7 +107,7 @@ def logToFileWorker() -> None:
 
 def openLog() -> None:
     log("[        ] Opening log...")
-    openOnExplorer(tempDir.name.replace('\\', '/')+'/log.txt', force=True)
+    os.startfile(tempDir.name.replace('\\', '/')+'/log.txt')
 
 def openOnExplorer(file: str, force: bool = True) -> None:
     if    (_platform == 'win32'):
