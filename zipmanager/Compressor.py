@@ -23,6 +23,8 @@ class Compressor(QtWidgets.QWidget):
         self.compression_level = 5
         self.files = [] 
         self.setUpToolBar()
+        
+        self.cachedIcons = {}
         self.setUpWidgets()
         self.callInMain.connect(lambda f: f())
     
@@ -467,6 +469,7 @@ class Compressor(QtWidgets.QWidget):
             self.parent: Compressor = parent
             self.zipfilename = zipfilename
             self.files = files
+            self.cachedIcons = []
     
         def pureCompress(self, zipObj: zipfile.ZipFile, a, b, compression_algorithm):
             self.errorWhileCompressing = None
@@ -481,7 +484,7 @@ class Compressor(QtWidgets.QWidget):
                 zipObj = zipfile.ZipFile(self.zipfilename, 'w')
                 totalFiles = 0
                 for item in self.files:
-                    self.changeItemIcon.emit(item, 2, getPath("not.ico"))
+                    self.changeItemIcon.emit(item, 2, "not.ico")
                     self.changeItemText.emit(item, 2, "Queued")
                     totalFiles += 1
 
@@ -520,7 +523,7 @@ class Compressor(QtWidgets.QWidget):
                 allDone = True
                 for item in self.files:
                     item: QtWidgets.QTreeWidgetItem
-                    self.changeItemIcon.emit(item, 2, getPath("loading.ico"))
+                    self.changeItemIcon.emit(item, 2, "loading.ico")
                     self.changeItemText.emit(item, 2, "Compressing")
                     subdir = item.text(4)
                     path = (item.text(3), '/'.join(item.text(3).split('/')[:-1]), subdir)
@@ -535,7 +538,7 @@ class Compressor(QtWidgets.QWidget):
                                     log("[  WARN  ] User cancelled the zip creation!")
                                     t.shouldBeRuning=False
                                     for item in self.files:
-                                        self.changeItemIcon.emit(item, 2, getPath("warn.ico"))
+                                        self.changeItemIcon.emit(item, 2, "warn.ico")
                                         self.changeItemText.emit(item, 2, "Canceled")
                                     self.throwWarning.emit("SomePythonThings Zip Manager", "User cancelled the zip creation")
                                     time.sleep(0.5)
@@ -554,11 +557,11 @@ class Compressor(QtWidgets.QWidget):
                             log('[   OK   ] File "'+str(path[0].split('/')[-1])+f'" added successfully on relative directory {subdir}')
                         else:
                             log('[  WARN  ] File "'+str(path[0].split('/')[-1])+'" skipped because it is the output zip')
-                        self.changeItemIcon.emit(item, 2, getPath("ok.ico"))
+                        self.changeItemIcon.emit(item, 2, "ok.ico")
                         self.changeItemText.emit(item, 2, "Done")
                     except Exception as e:
                         allDone = False
-                        self.changeItemIcon.emit(item, 2, getPath("warn.ico"))
+                        self.changeItemIcon.emit(item, 2, "warn.ico")
                         self.changeItemText.emit(item, 2, str(e))
                         log(f'[ FAILED ] Unable to add file "{str(path)}": {e}')
                         errors += " - "+str(path[0])+"\n"
@@ -602,7 +605,13 @@ class Compressor(QtWidgets.QWidget):
             return files
 
         def changeItemIcon(item: QtWidgets.QTreeWidgetItem, index: int, icon: str):
-            item.setIcon(index, QtGui.QIcon(QtGui.QPixmap(icon).scaledToHeight(16, QtCore.Qt.SmoothTransformation)))
+            path = getPath(icon)
+            if icon in self.cachedIcons:
+                item.setIcon(index, self.cachedIcons[icon])
+            else:
+                icn = QtGui.QIcon(QtGui.QPixmap(path).scaledToHeight(16, QtCore.Qt.SmoothTransformation))
+                self.cachedIcons[icon] = icn
+                item.setIcon(index, icn)
             
         def changeItemText(item: QtWidgets.QTreeWidgetItem, index: int, text: str):
             item.setText(index, text)

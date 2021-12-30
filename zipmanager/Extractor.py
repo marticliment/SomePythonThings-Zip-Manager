@@ -86,10 +86,11 @@ class Extractor(QtWidgets.QWidget):
                     """)
             
     def changeItemIconFun(self, item: QtWidgets.QTreeWidgetItem, index: int, icon: str):
+        path = getPath(icon)
         if icon in self.cachedIcons:
             item.setIcon(index, self.cachedIcons[icon])
         else:
-            icn = QtGui.QIcon(QtGui.QPixmap(icon).scaledToHeight(16, QtCore.Qt.SmoothTransformation))
+            icn = QtGui.QIcon(QtGui.QPixmap(path).scaledToHeight(16, QtCore.Qt.SmoothTransformation))
             self.cachedIcons[icon] = icn
             item.setIcon(index, icn)
             
@@ -722,12 +723,12 @@ class Extractor(QtWidgets.QWidget):
             totalFiles = 0
             for file in files:
                 if(file.treeWidget().itemWidget(file, 2).isChecked()):
-                    self.changeItemIcon.emit(file, 5, getPath("not.ico"))
+                    self.changeItemIcon.emit(file, 5, "not.ico")
                     self.changeItemText.emit(file, 5, "Queued")
                     totalFiles += 1
                 else:
                     pass
-                    self.changeItemIcon.emit(file, 5, getPath("skipped.png"))
+                    self.changeItemIcon.emit(file, 5, "skipped.png")
                     self.changeItemText.emit(file, 5, "Not selected")
             actualFile = 0
             self.errorWhileExtracting = None
@@ -737,7 +738,7 @@ class Extractor(QtWidgets.QWidget):
                 if(item.treeWidget().itemWidget(item, 2).isChecked()):
                     file = item.text(6)
                     try:
-                        self.changeItemIcon.emit(item, 5, getPath("loading.ico"))
+                        self.changeItemIcon.emit(item, 5, "loading.ico")
                         self.changeItemText.emit(item, 5, "Extracting")
                         self.updateProgressBar[int, int, str].emit(actualFile, totalFiles, file)
                         t = KillableThread(target=self.pure_extract, args=( archive, file, directory))
@@ -748,7 +749,7 @@ class Extractor(QtWidgets.QWidget):
                                 self.stopLoadingSignal.emit()
                                 t.shouldBeRuning=False
                                 for item in files:
-                                    self.changeItemIcon.emit(item, 5, getPath("warn.ico"))
+                                    self.changeItemIcon.emit(item, 5, "warn.ico")
                                     self.changeItemText.emit(item, 5, "Canceled")
                                 self.throwWarningSignal.emit("SomePythonThings Zip Manager", "User cancelled the zip extraction")
                                 archive.close()
@@ -759,13 +760,13 @@ class Extractor(QtWidgets.QWidget):
                         if(self.errorWhileExtracting!=None):
                             raise self.errorWhileExtracting
                         log('[   OK   ] File '+file.split('/')[-1]+' extracted successfully')
-                        self.changeItemIcon.emit(item, 5, getPath("ok.ico"))
+                        self.changeItemIcon.emit(item, 5, "ok.ico")
                         self.changeItemText.emit(item, 5, "Done")
                     except Exception as e:
-                        self.changeItemIcon.emit(item, 5, getPath("warn.ico"))
+                        self.changeItemIcon.emit(item, 5, "warn.ico")
                         self.changeItemText.emit(item, 5, str(e))
                         log('[  WARN  ] Unable to extract file ' +file.split('/')[-1])
-                        self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Unable to extract file '+file.split('/')[-1]+"\n\nReason:\n"+str(e))
+                        #self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Unable to extract file '+file.split('/')[-1]+"\n\nReason:\n"+str(e))
                         error = True
                     finally:
                         actualFile += 1
@@ -776,11 +777,14 @@ class Extractor(QtWidgets.QWidget):
             self.stopLoadingSignal.emit()
             if error:
                 log('[  WARN  ] Zip file extracted with some errors')
-                self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Zip file extracted with some errors')
+                self.throwWarningSignal.emit("SomePythonThings Zip Manager", 'Zip file extracted with some errors. You can check more details about failed files on the "Status" column')
             else:
                 log('[   OK   ] Zip file extracted sucessfully')
                 self.throwInfoSignal.emit("SomePythonThings Zip Manager", 'Zip file extracted sucessfully')
-            os.startfile(directory)
+            if self.treeWidget.topLevelItemCount()==1:
+                os.startfile(os.path.join(directory, self.treeWidget.topLevelItem(0).text(6)))
+            else:
+                os.startfile(directory)
         except Exception as e:
             if debugging:
                 raise e
