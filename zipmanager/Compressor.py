@@ -13,6 +13,7 @@ from qt_thread_updater import get_updater
 class Compressor(QtWidgets.QWidget):
 
     setIconSignal = QtCore.Signal(QtWidgets.QTreeWidgetItem, QtGui.QIcon)
+    callInMain = QtCore.Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -23,6 +24,7 @@ class Compressor(QtWidgets.QWidget):
         self.files = [] 
         self.setUpToolBar()
         self.setUpWidgets()
+        self.callInMain.connect(lambda f: f())
     
     def throwInfo(self, title: str, body: str) -> None:
         try:
@@ -244,20 +246,7 @@ class Compressor(QtWidgets.QWidget):
     
     def openOSFileDirectly(self, file: str) -> None:
         log(f"[        ] Spawining process to open file {file}")
-        if(_platform=="win32"):
-            os.startfile(file)
-            c = 0
-            #c = os.system(f"start \"\" \"{file}\"")#, shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        elif(_platform=="darwin"):
-            c = os.system(f"open \"{file}\"")
-            #c = subprocess.run(f"open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        else:
-            c = os.system(f"xdg-open \"{file}\"")
-            #c = subprocess.run(f"xdg-open \"{file}\"", shell=False, check=False, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        if(c != 0):
-            self.throwError("Error opening file", f"Unable to open file \"{file}\"\n\nOutput code: \"{c.returncode}\"\n\nError Details: \n\"{str(c.stdout)}\"")
-        else:
-            log("[   OK   ] File opened succesfully (exit code is 0)")
+        os.startfile(file)
 
     def removeFiles(self) -> None:
         self.files = []
@@ -295,45 +284,46 @@ class Compressor(QtWidgets.QWidget):
                             file = file[1:]
                         filesToAdd.append(file)
                 filepaths.append(filesToAdd)
+            Thread(target=self.openFileAsync, args=(filepaths,)).start()
+        except Exception as e:
+            if debugging: raise e
+            
+    def openFileAsync(self, filepaths):
+        try:
             for filepath in filepaths[0]:
                 if(os.path.isdir(filepath)):
-                    self.openFolder(folder=filepath)
+                    self.openFolderAsync(folder=filepath)
                 else:
                     file = open(filepath, 'r')
                     filename = file.name.replace("\\", "/")
                     file.close()
                     try:
                         if([filename, os.path.dirname(filename), 'file'] in self.files):
-                            log("[  WARN  ] File already there!")
-                            if(QtWidgets.QMessageBox.question(self, "The file is already there!", f"The file {filename} is already selected to be compressed. Do tou want to add it anyway?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No, QtWidgets.QMessageBox.Yes) == QtWidgets.QMessageBox.Yes):
-                                self.files.append([filename, os.path.dirname(filename), 'file'])
-                                log("[   OK   ] File added anyway")
-                                goAhead = True
-                            else:
-                                log("[   OK   ] File ommitted")
-                                goAhead = False
+                            log("[   OK   ] File ommitted")
                         else:
                             log("[        ] File not present in file list, adding it.")
                             self.files.append([filename, os.path.dirname(filename), 'file'])
-                            goAhead=True
-                        if(goAhead):
                             log('[   OK   ] File "'+str(filename)+'" processed')
-                            item = QtWidgets.QTreeWidgetItem()
-                            item.setText(0, filename.split('/')[-1])
-                            item.setText(1, "{0:.3f} MB".format(os.path.getsize(filename)/1000000))
-                            item.setText(2, "Pending")
-                            item.setText(3, filename)
-                            item.setText(4, "/")
-                            try:
-                                item.setIcon(0, QtGui.QIcon(getFileIcon(filename, skipCacheOnExe=True)))
-                            except:
-                                pass
-                            self.treeWidget.addTopLevelItem(item)
+                            
+                            def addFileItem(filename):
+                                item = QtWidgets.QTreeWidgetItem()
+                                item.setText(0, filename.split('/')[-1])
+                                item.setText(1, "{0:.3f} MB".format(os.path.getsize(filename)/1000000))
+                                item.setText(2, "Pending")
+                                item.setText(3, filename)
+                                item.setText(4, "/")
+                                try:
+                                    item.setIcon(0, QtGui.QIcon(getFileIcon(filename, skipCacheOnExe=True)))
+                                except:
+                                    pass
+                                self.treeWidget.addTopLevelItem(item)
+                                
+                            self.callInMain.emit(lambda: addFileItem(filename))
                     except Exception as e:
                         log('[ FAILED ] Unable to process file "'+filepath+'"')
+                        self.callInMain.emit(lambda: self.throwError("Error processing file!", f"Unable to read file \"{filename}\"\n\nError details: {str(e)}"))
                         if(debugging):
                             raise e
-                        self.throwError("Error processing file!","Unable to read file \""+filename+"\"")
                         try:
                             file.close()
                         except:
@@ -341,21 +331,41 @@ class Compressor(QtWidgets.QWidget):
         except Exception as e:
             if debugging:
                 raise e
-            self.throwError("SomePythonThings Zip Manager", "An error occurred while adding one or more files. \n\nError detsils: "+str(e))
+            self.callInMain.emit(lambda: self.throwError("SomePythonThings Zip Manager", "An error occurred while adding one or more files. \n\nError detsils: "+str(e)))
             log('[ FAILED ] Unable to open file. Returning value 0')
     
     def getChildFolderName(self, baseDir: str, longerDir: str) -> str:
         return longerDir.replace(baseDir, "")
     
     def setIcon(self, item: QtWidgets.QTreeWidgetItem, filename: str) -> None:
-        icon = QtGui.QIcon(getFileIcon(filename))
+        icon = getFileIcon(filename)
         try:
-            log("[   OK   ] Icon loaded successfully")
             self.setIconSignal.emit(item, icon)
         except:
             pass
 
+    def addChildFileItem(self, file: str, rootFolder: str, folderpath: str, folderItem: QtWidgets.QTreeWidgetItem):
+        item = QtWidgets.QTreeWidgetItem()
+        item.setText(0, file.split('/')[-1])
+        item.setText(1, "{0:.3f} MB".format(os.path.getsize(file)/1000000))
+        item.setText(2, "Pending")
+        item.setText(3, file)
+        item.setText(4, self.getChildFolderName(rootFolder, folderpath))
+        item.setIcon(0, getFileIcon(file))
+        folderItem.addChild(item)
+    
+    def addChildFolderItem(self, folder: str, rootFolder: str, folderItem: QtWidgets.QTreeWidgetItem):
+        item = QtWidgets.QTreeWidgetItem()
+        item.setText(0, folder.split('/')[-1])
+        item.setText(1, "{0:.3f} MB".format(os.path.getsize(folder)/1000000))
+        item.setText(2, "")
+        item.setText(3, "/".join(folder.split('/')[0:-1]))
+        item.setIcon(0, getFileIcon(folder))
+        folderItem.addChild(item)
+        self.addChildFolder(item, folder, rootFolder)
+        
     def addChildFolder(self, folderItem: QtWidgets.QTreeWidgetItem, folderpath: str, rootFolder: str):
+        
         log(f"[   OK   ] Processing {folderpath} child files...")
         len_root = len(folderpath.replace("\\", "/").split("/"))
         for root, folders, files in os.walk(folderpath):
@@ -365,32 +375,20 @@ class Compressor(QtWidgets.QWidget):
                 filename = root.replace("\\", "/")+"/"+file
                 if(len(root.split('/'))==len_root):
                     log("[   OK   ] Adding child file "+root+"__"+file)
-                    item = QtWidgets.QTreeWidgetItem()
-                    item.setText(0, filename.split('/')[-1])
-                    item.setText(1, "{0:.3f} MB".format(os.path.getsize(filename)/1000000))
-                    item.setText(2, "Pending")
-                    item.setText(3, filename)
-                    item.setText(4, self.getChildFolderName(rootFolder, folderpath))
-                    Thread(target=self.setIcon, args=(item, filename)).start()
-                    folderItem.addChild(item)
+                    
+                    f = lambda: self.addChildFileItem(filename, rootFolder, folderpath, folderItem)
+                    self.callInMain.emit(f)
+                    
             for folder in folders:
                 folder = folder.replace("\\", "/")
                 foldername = root.replace("\\", "/")+"/"+folder.replace("\\", "/")
                 if(len(root.split('/'))==len_root):
                     log("[   OK   ] Adding child folder "+root+folder)
-                    item = QtWidgets.QTreeWidgetItem()
-                    item.setText(0, foldername.split('/')[-1])
-                    item.setText(1, "{0:.3f} MB".format(os.path.getsize(foldername)/1000000))
-                    item.setText(2, "")
-                    item.setText(3, "/".join(foldername.split('/')[0:-1]))
-                    try:
-                        item.setIcon(0, QtGui.QIcon(QtGui.QPixmap(getPath("folder.ico")).scaledToWidth(24, QtCore.Qt.SmoothTransformation)))
-                    except:
-                        pass
-                    folderItem.addChild(item)
-                    self.addChildFolder(item, foldername, rootFolder)
+                    
+                    f = lambda: self.addChildFolderItem(foldername, rootFolder, folderItem)
+                    self.callInMain.emit(f)
 
-    def openFolder(self, folder=""):
+    def openFolder(self, folder: str = ""):
         log('[        ] Dialog in process')
         if(folder=="" or folder==False):
             folder = QtWidgets.QFileDialog.getExistingDirectory(self, 'Select a folder to compress it')
@@ -400,24 +398,31 @@ class Compressor(QtWidgets.QWidget):
         else:
             log("[  WARN  ] Folder was given as argument")
         log('[   OK   ] Dialog Completed')
+        Thread(target=self.openFolderAsync, args=(folder,)).start()
+        
+    def openFolderAsync(self, folder: str) -> None:
         try:
             self.files.append([folder, folder, 'folder'])
-            folderItem = QtWidgets.QTreeWidgetItem()
-            folderItem.setText(0, folder.split('/')[-1])
-            folderItem.setText(1, "{0:.3f} MB".format(self.get_size(folder)))
-            folderItem.setText(2, "")
-            folderItem.setText(3, "/".join(folder.split('/')[0:-1]))
-            try:
-                folderItem.setIcon(0, QtGui.QIcon(QtGui.QPixmap(getPath("folder.ico")).scaledToWidth(24, QtCore.Qt.SmoothTransformation)))
-            except:
-                pass
-            self.treeWidget.addTopLevelItem(folderItem)
-            self.addChildFolder(folderItem, folder, '/'.join(folder.split('/')[:-1]))
+            
+            def addFolderItem(folder):
+                folderItem = QtWidgets.QTreeWidgetItem()
+                folderItem.setText(0, folder.split('/')[-1])
+                folderItem.setText(1, "{0:.3f} MB".format(self.get_size(folder)))
+                folderItem.setText(2, "")
+                folderItem.setText(3, "/".join(folder.split('/')[0:-1]))
+                try:
+                    folderItem.setIcon(0, getFileIcon(folder))
+                except:
+                    pass
+                self.treeWidget.addTopLevelItem(folderItem)
+                self.addChildFolder(folderItem, folder, '/'.join(folder.split('/')[:-1]))
+                
+            self.callInMain.emit(lambda: addFolderItem(folder))
             log('[   OK   ] Folder selected successfully.')
         except Exception as e:
             if debugging:
                 raise e
-            self.throwError("Error processing folder!", "Unable to read folder \""+folder+"\"")
+            self.callInMain.emit(lambda: self.throwError("Error processing folder!", "Unable to read folder \""+folder+"\""))
 
     def get_size(self, start_path):
         total_size = 0
