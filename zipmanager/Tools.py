@@ -406,17 +406,20 @@ def getExtension(file) -> str:
     else:
         return (file.split('.'))[-1]
 
-
+fileIconProvider = QtWidgets.QFileIconProvider()
 cachedIcons = {}
 
-def getFileIcon(file) -> QtGui.QIcon:
+def getFileIcon(file: str, skipCacheOnExe: bool = False) -> QtGui.QIcon:
     ext = getExtension(file).lower()
     if(ext[-1]=="/"):
         ext = "folder"
-    if ext in cachedIcons:
+    if ext in cachedIcons and (ext!="exe" or skipCacheOnExe):
         return cachedIcons[ext]
     else:
-        icon = QtGui.QIcon(QtWidgets.QFileIconProvider().icon(QtCore.QFileInfo(file)).pixmap(48, 48).scaledToHeight(24, QtCore.Qt.SmoothTransformation))
+        fileInfo = QtCore.QFileInfo(file)
+        icon = fileIconProvider.icon(fileInfo)
+        if icon.isNull():
+            icon = QtGui.QIcon(fileIconProvider.icon(fileInfo).pixmap(48, 48).scaledToHeight(24, QtCore.Qt.SmoothTransformation))
         cachedIcons[ext] = icon
         return icon
 
